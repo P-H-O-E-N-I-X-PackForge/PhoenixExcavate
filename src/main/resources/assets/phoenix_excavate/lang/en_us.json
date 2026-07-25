@@ -1,0 +1,16 @@
+{
+  "key.categories.phoenix_excavate": "Phoenix Ultimine",
+  "key.phoenix_excavate.activate": "Activate Vein Mine",
+  "key.phoenix_excavate.open_settings": "Open Ultimine Settings",
+
+  "phoenix_excavate.shape.blob": "Blob",
+  "phoenix_excavate.shape.tunnel": "Tunnel",
+  "phoenix_excavate.shape.layer": "Layer",
+  "phoenix_excavate.shape.wall": "Wall",
+  "phoenix_excavate.shape.staircase": "Staircase",
+  "phoenix_excavate.shape.shapeless": "Shapeless",
+
+  "phoenix_excavate.matchmode.exact": "Exact",
+  "phoenix_excavate.matchmode.match_ore": "Match List (Ore)",
+  "phoenix_excavate.matchmode.match_any": "Match List (Any)"
+}
