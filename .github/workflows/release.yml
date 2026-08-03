@@ -1,7 +1,5 @@
 name: Release to CurseForge
 
-# Fires when a version tag (v1.2.3) is pushed - see release.ps1 in the PFT Core root, which bumps
-# gradle.properties, prepends a CHANGELOG.md entry, commits, and creates that tag for you.
 on:
   push:
     tags:
@@ -24,11 +22,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
       - name: Build
         run: ./gradlew build -x test --console=plain
 
-      # CHANGELOG.md is "newest first" (see release.ps1) - this pulls out just the body of the
-      # very first "## [...]" section so CurseForge gets this release's notes, not the whole file.
       - name: Extract latest changelog entry
         run: |
           awk '/^## \[/{if (found) exit; found=1; next} found' CHANGELOG.md > /tmp/release_notes.md
@@ -37,7 +36,7 @@ jobs:
           fi
 
       - name: Publish to CurseForge
-        uses: Kira-NT/mc-publish@v3
+        uses: Kira-NT/mc-publish@v3.3.1
         with:
           curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
@@ -48,5 +47,6 @@ jobs:
           loaders: forge
           game-versions: |
             1.20.1
+          environment: client | server
           java: |
             17
