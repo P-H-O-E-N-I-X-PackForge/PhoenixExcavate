@@ -60,11 +60,9 @@ public class VeinBreaker {
 
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
-        if (event.isCanceled()) return;
-        if (!(event.getPlayer() instanceof ServerPlayer player)) return;
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (Boolean.TRUE.equals(PROCESSING.get())) return;
-
+        if (event.isCanceled() || Boolean.TRUE.equals(PROCESSING.get())) return;
+        if (!(event.getPlayer() instanceof ServerPlayer player) || !(event.getLevel() instanceof ServerLevel level)) return;
+        
         try {
             PROCESSING.set(true);
             handleBreak(event, player, level);
@@ -76,13 +74,15 @@ public class VeinBreaker {
     }
 
     private static void logFailure(ServerPlayer player, BlockEvent.BreakEvent event, Throwable t) {
+        
+        String playerName = (player != null) ? player.getName().getString() : "Unknown Player";
+        String posString = (event != null && event.getPos() != null) ? event.getPos().toString() : "Unknown Pos";
+
         try {
-            PhoenixExcavate.LOGGER.error("Vein-mining failed for " + player.getName().getString() +
-                    " at " + event.getPos() + " - the triggering block break is unaffected.", t);
+            PhoenixExcavate.LOGGER.error("Vein-mining failed for {} at {} - the triggering block break is unaffected.", playerName, posString, t);
         } catch (Throwable loggingFailure) {
-            System.err.println("[Phoenix Ultimine] Vein-mining failed for " + player.getName().getString() +
-                    " at " + event.getPos() + " (logger itself also failed: " + loggingFailure + ")");
-            t.printStackTrace();
+            System.err.println("[PhoenixExcavate] Vein-mining failed for " + playerName + " at " + posString +
+                    " (Logger failed: " + loggingFailure.getMessage() + t + ")");
         }
     }
 
@@ -96,8 +96,14 @@ public class VeinBreaker {
         VeinServerState.Active active = VeinServerState.active(player.getUUID());
         if (active == null) return;
 
-        if (!ExcavateAPI.isFeatureEnabled(
-                ExcavateAPI.FEATURE_VEIN_MINING, level.dimension().location())) {
+        ItemStack heldTool = player.getMainHandItem();
+
+        if (!ExcavateAPI.isFeatureEnabled(ExcavateAPI.FEATURE_VEIN_MINING, level.dimension().location(), player,
+                heldTool)) {
+            return;
+        }
+
+        if (!ExcavateServerConfig.hasRequiredEnchantment(heldTool)) {
             return;
         }
 
@@ -142,7 +148,6 @@ public class VeinBreaker {
         if (JOBS.isEmpty()) return;
 
         try {
-
             PROCESSING.set(true);
             drainJobs();
         } finally {
@@ -198,6 +203,7 @@ public class VeinBreaker {
             BlockPos pos = job.remaining.poll();
             processed++;
 
+            assert pos != null;
             BlockState state = level.getBlockState(pos);
             if (state.isAir()) continue;
 
@@ -210,9 +216,15 @@ public class VeinBreaker {
             BlockEntity be = level.getBlockEntity(pos);
 
             ItemStack dropTool = ExcavateServerConfig.effectiveRespectEnchantments() ? tool : ItemStack.EMPTY;
-            Block.dropResources(state, level, pos, be, player, dropTool);
+            if (ExcavateServerConfig.effectiveCollectToPlayer()) {
 
-            level.destroyBlock(pos, false, player);
+                List<ItemStack> drops = Block.getDrops(state, level, pos, be, player, dropTool);
+                level.destroyBlock(pos, false, player);
+                giveToPlayer(player, drops);
+            } else {
+                level.destroyBlock(pos, false, player);
+                Block.dropResources(state, level, pos, be, player, dropTool);
+            }
             level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
                     pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 12, 0.3, 0.3, 0.3, 0.0);
 
@@ -228,6 +240,16 @@ public class VeinBreaker {
 
             if (ExcavateServerConfig.effectiveRespectHunger()) {
                 player.causeFoodExhaustion(0.005F);
+            }
+        }
+    }
+
+    private static void giveToPlayer(ServerPlayer player, List<ItemStack> drops) {
+        for (ItemStack drop : drops) {
+            if (drop.isEmpty()) continue;
+            player.getInventory().add(drop);
+            if (!drop.isEmpty()) {
+                player.drop(drop, false);
             }
         }
     }

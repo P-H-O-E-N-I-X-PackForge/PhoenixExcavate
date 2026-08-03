@@ -34,9 +34,6 @@ public class VeinPreviewTracker {
         return preview;
     }
 
-    // Runs on the render tick (once per rendered frame) rather than the game tick (fixed 20/sec) - sampling the
-    // look direction only 20 times a second while the camera itself moves at full framerate is what made the
-    // preview outline visibly snap/stutter during fast camera movement instead of tracking it smoothly.
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;

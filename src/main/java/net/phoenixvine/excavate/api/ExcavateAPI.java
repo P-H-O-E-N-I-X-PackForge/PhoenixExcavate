@@ -2,6 +2,7 @@ package net.phoenixvine.excavate.api;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.vein.MatchModeRegistry;
 import net.phoenixvine.excavate.vein.VeinServerState;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
 
 public final class ExcavateAPI {
@@ -50,6 +52,7 @@ public final class ExcavateAPI {
     public static final String FEATURE_VEIN_MINING = "vein_mining";
 
     private static final Map<String, BooleanSupplier> FEATURE_GATES = new ConcurrentHashMap<>();
+    private static final Map<String, BiPredicate<Player, ItemStack>> ITEM_GATES = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, Integer> DIMENSION_TIERS = new ConcurrentHashMap<>();
     private static final Map<String, Map<ResourceLocation, Integer>> TIER_REQUIREMENTS = new ConcurrentHashMap<>();
     private static final Map<String, Map<ResourceLocation, ExcavateFeatureState>> FEATURE_STATES =
@@ -73,6 +76,15 @@ public final class ExcavateAPI {
 
     public static void clearFeatureGate(String featureId) {
         FEATURE_GATES.remove(featureId);
+    }
+
+    public static void registerItemGate(String featureId, BiPredicate<Player, ItemStack> check) {
+        KNOWN_FEATURE_IDS.add(featureId);
+        ITEM_GATES.put(featureId, check);
+    }
+
+    public static void clearItemGate(String featureId) {
+        ITEM_GATES.remove(featureId);
     }
 
     public static void setTier(ResourceLocation dimension, int tier) {
@@ -102,6 +114,14 @@ public final class ExcavateAPI {
 
         Integer required = perDimension.get(dimension);
         return required == null || getTier(dimension) >= required;
+    }
+
+    public static boolean isFeatureEnabled(String featureId, ResourceLocation dimension, Player player,
+                                           ItemStack tool) {
+        if (!isFeatureEnabled(featureId, dimension)) return false;
+
+        BiPredicate<Player, ItemStack> itemGate = ITEM_GATES.get(featureId);
+        return itemGate == null || itemGate.test(player, tool);
     }
 
     private static boolean checkGate(String featureId) {

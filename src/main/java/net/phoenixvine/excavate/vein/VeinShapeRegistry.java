@@ -49,14 +49,7 @@ public final class VeinShapeRegistry {
 
         SHAPES.add(new VeinShape("staircase", "phoenix_excavate.shape.staircase",
                 (pos, origin, facing, diagonals) -> {
-                    // Each step advances the floor by 1 forward + 1 down, but also includes the block directly
-                    // above that new floor so the staircase is actually walkable (2 vertical blocks per step),
-                    // not just a 1-wide diagonal line. That headroom block must NOT itself keep expanding the
-                    // staircase - only cells on the true floor line do - otherwise the headroom line would
-                    // recursively spawn its own parallel staircase one level up, forever. We distinguish floor
-                    // vs. headroom purely from pos/origin/facing (no extra state needed): on the floor line,
-                    // vertical offset from origin always equals -(forward distance); headroom cells are exactly
-                    // 1 higher than that.
+
                     int yOffset = pos.getY() - origin.getY();
                     int horizOffset = (pos.getX() - origin.getX()) * facing.getStepX() +
                             (pos.getZ() - origin.getZ()) * facing.getStepZ();
@@ -67,7 +60,7 @@ public final class VeinShapeRegistry {
                 }, true));
 
         SHAPES.add(new VeinShape("shapeless", "phoenix_excavate.shape.shapeless",
-                (pos, origin, facing, diagonals) -> allOffsetPositions(pos, diagonals), true));
+                (pos, origin, facing, diagonals) -> elongatedOffsetPositions(pos, origin, facing, diagonals), true));
     }
 
     public static void register(VeinShape shape) {
@@ -101,6 +94,36 @@ public final class VeinShapeRegistry {
             }
         }
         return enabled.get((idx + 1) % enabled.size());
+    }
+
+    private static final int SHAPELESS_LATERAL_LIMIT = 2;
+
+    private static List<BlockPos> elongatedOffsetPositions(BlockPos pos, BlockPos origin, Direction facing, boolean diagonals) {
+        List<BlockPos> all = allOffsetPositions(pos, diagonals);
+        Direction.Axis primaryAxis = facing.getAxis();
+        List<BlockPos> out = new ArrayList<>(all.size());
+        for (BlockPos candidate : all) {
+            int lateralA;
+            int lateralB;
+            switch (primaryAxis) {
+                case X -> {
+                    lateralA = candidate.getY() - origin.getY();
+                    lateralB = candidate.getZ() - origin.getZ();
+                }
+                case Y -> {
+                    lateralA = candidate.getX() - origin.getX();
+                    lateralB = candidate.getZ() - origin.getZ();
+                }
+                default -> {
+                    lateralA = candidate.getX() - origin.getX();
+                    lateralB = candidate.getY() - origin.getY();
+                }
+            }
+            if (Math.abs(lateralA) <= SHAPELESS_LATERAL_LIMIT && Math.abs(lateralB) <= SHAPELESS_LATERAL_LIMIT) {
+                out.add(candidate);
+            }
+        }
+        return out;
     }
 
     private static List<BlockPos> allOffsetPositions(BlockPos pos, boolean diagonals) {

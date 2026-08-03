@@ -1,6 +1,12 @@
 package net.phoenixvine.excavate.config;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.phoenixvine.excavate.PhoenixExcavate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +18,7 @@ public class ExcavateServerConfig {
     public static final ForgeConfigSpec.BooleanValue LOCK_RESPECT_DURABILITY;
     public static final ForgeConfigSpec.BooleanValue LOCK_RESPECT_HUNGER;
     public static final ForgeConfigSpec.BooleanValue LOCK_RESPECT_ENCHANTMENTS;
+    public static final ForgeConfigSpec.BooleanValue LOCK_COLLECT_TO_PLAYER;
     public static final ForgeConfigSpec.IntValue MAX_VEIN_SIZE_CAP;
     public static final ForgeConfigSpec.BooleanValue LOCK_MAX_VEIN_SIZE;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> DISABLED_SHAPES;
@@ -24,6 +31,8 @@ public class ExcavateServerConfig {
 
     public static final ForgeConfigSpec.IntValue VEIN_BLOCKS_PER_TICK;
     public static final ForgeConfigSpec.IntValue VEIN_TRIGGER_DEBOUNCE_TICKS;
+
+    public static final ForgeConfigSpec.ConfigValue<String> REQUIRED_ENCHANTMENT;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -40,6 +49,11 @@ public class ExcavateServerConfig {
         LOCK_RESPECT_ENCHANTMENTS = builder
                 .comment("If true, players cannot disable Fortune/Silk Touch being respected on vein-mined drops.")
                 .define("lockRespectEnchantments", false);
+
+        LOCK_COLLECT_TO_PLAYER = builder
+                .comment("If true, players cannot disable vein-mined drops being collected directly into their " +
+                        "inventory - it is always on regardless of their own setting.")
+                .define("lockCollectToPlayer", false);
 
         MAX_VEIN_SIZE_CAP = builder
                 .comment("Hard ceiling on how many blocks a single vein-mine can break, regardless of any player's own max-vein-size preference.")
@@ -65,8 +79,10 @@ public class ExcavateServerConfig {
         ORE_LIST_DEFAULTS = builder
                 .comment("Default entries for the first (\"ore\") match list - both its initial contents on first " +
                         "launch and what the in-game Reset button restores it to. Each entry is \"TAG:<id>\" or " +
-                        "\"BLOCK:<id>\" (e.g. \"TAG:minecraft:iron_ores\"). Repoint this at anything you like - it " +
-                        "doesn't have to actually be ores.")
+                        "\"BLOCK:<id>\" (e.g. \"TAG:forge:ores/iron\"). Uses Forge's common ore tag convention " +
+                        "(forge:ores/<name>) rather than vanilla's per-variant-family tags, so modded ores that " +
+                        "register into the Forge common tags are recognized too. Repoint this at anything you " +
+                        "like - it doesn't have to actually be ores.")
                 .defineList("oreListDefaults", defaultOreEntries(), o -> o instanceof String);
 
         ANY_LIST_DEFAULTS = builder
@@ -111,19 +127,69 @@ public class ExcavateServerConfig {
                 .defineInRange("veinTriggerDebounceTicks", 5, 0, 200);
 
         builder.pop();
+        builder.push("requirements");
+
+        REQUIRED_ENCHANTMENT = builder
+                .comment("If set, vein-mining only triggers when the player's held tool carries this enchantment " +
+                        "(registry id, e.g. \"minecraft:silk_touch\", or a modded enchant's id). Leave blank " +
+                        "(default) to require nothing. This only gates whether a break continues into a full " +
+                        "vein-mine - it doesn't touch vanilla mining of the single block itself. For anything more " +
+                        "elaborate than \"needs one specific enchant\" (a custom item, an NBT flag, a whole other " +
+                        "mod's mechanic), use ExcavateAPI.registerItemGate(...) instead - this config option is " +
+                        "just the no-code path for the common case.")
+                .define("requiredEnchantment", "");
+
+        builder.pop();
         SPEC = builder.build();
+    }
+
+    private static volatile boolean warnedBadEnchantId = false;
+    private static volatile boolean warnedUnknownEnchant = false;
+
+    public static boolean hasRequiredEnchantment(ItemStack tool) {
+        String id = REQUIRED_ENCHANTMENT.get().trim();
+        if (id.isEmpty()) return true;
+
+        ResourceLocation rl = ResourceLocation.tryParse(id);
+        if (rl == null) {
+            if (!warnedBadEnchantId) {
+                warnedBadEnchantId = true;
+                PhoenixExcavate.LOGGER.warn(
+                        "requiredEnchantment '{}' is not a valid registry id - ignoring it (vein-mining is NOT " +
+                                "gated). Expected format like \"minecraft:silk_touch\".",
+                        id);
+            }
+            return true;
+        }
+
+        Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(rl);
+        if (enchantment == null) {
+            if (!warnedUnknownEnchant) {
+                warnedUnknownEnchant = true;
+                PhoenixExcavate.LOGGER.warn(
+                        "requiredEnchantment '{}' does not match any registered enchantment (mod not installed, " +
+                                "or a typo?) - ignoring it (vein-mining is NOT gated).",
+                        id);
+            }
+            return true;
+        }
+
+        return EnchantmentHelper.getItemEnchantmentLevel(enchantment, tool) > 0;
     }
 
     private static List<String> defaultOreEntries() {
         List<String> defaults = new ArrayList<>();
-        defaults.add("TAG:minecraft:coal_ores");
-        defaults.add("TAG:minecraft:iron_ores");
-        defaults.add("TAG:minecraft:copper_ores");
-        defaults.add("TAG:minecraft:gold_ores");
-        defaults.add("TAG:minecraft:redstone_ores");
-        defaults.add("TAG:minecraft:lapis_ores");
-        defaults.add("TAG:minecraft:diamond_ores");
-        defaults.add("TAG:minecraft:emerald_ores");
+
+        defaults.add("TAG:forge:ores/coal");
+        defaults.add("TAG:forge:ores/iron");
+        defaults.add("TAG:forge:ores/copper");
+        defaults.add("TAG:forge:ores/gold");
+        defaults.add("TAG:forge:ores/redstone");
+        defaults.add("TAG:forge:ores/lapis");
+        defaults.add("TAG:forge:ores/diamond");
+        defaults.add("TAG:forge:ores/emerald");
+        defaults.add("TAG:forge:ores/quartz");
+        defaults.add("TAG:forge:ores/netherite_scrap");
         return defaults;
     }
 
@@ -147,6 +213,10 @@ public class ExcavateServerConfig {
 
     public static boolean effectiveRespectEnchantments() {
         return LOCK_RESPECT_ENCHANTMENTS.get() || ExcavateSettings.get().isRespectEnchantments();
+    }
+
+    public static boolean effectiveCollectToPlayer() {
+        return LOCK_COLLECT_TO_PLAYER.get() || ExcavateSettings.get().isCollectToPlayer();
     }
 
     public static int effectiveMaxVeinSize() {

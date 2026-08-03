@@ -181,7 +181,10 @@ public class ExcavateConfigScreen extends Screen {
                 ExcavateServerConfig.effectiveRespectEnchantments(),
                 ExcavateServerConfig.LOCK_RESPECT_ENCHANTMENTS.get(), mx, my);
         ty = drawToggleRow(g, x, ty, "Hold to activate (off = toggle)", s.isHoldToActivate(), false, mx, my);
-        drawToggleRow(g, x, ty, "Include diagonal neighbors", s.isIncludeDiagonalNeighbors(), false, mx, my);
+        ty = drawToggleRow(g, x, ty, "Include diagonal neighbors", s.isIncludeDiagonalNeighbors(), false, mx, my);
+        drawToggleRow(g, x, ty, "Collect drops to inventory",
+                ExcavateServerConfig.effectiveCollectToPlayer(), ExcavateServerConfig.LOCK_COLLECT_TO_PLAYER.get(),
+                mx, my);
     }
 
     private void renderRightColumn(GuiGraphics g, int mx, int my) {
@@ -357,6 +360,7 @@ public class ExcavateConfigScreen extends Screen {
                     case 3 -> s.setRespectEnchantments(!s.isRespectEnchantments());
                     case 4 -> s.setHoldToActivate(!s.isHoldToActivate());
                     case 5 -> s.setIncludeDiagonalNeighbors(!s.isIncludeDiagonalNeighbors());
+                    case 6 -> s.setCollectToPlayer(!s.isCollectToPlayer());
                     default -> {}
                 }
                 s.save();
@@ -424,6 +428,10 @@ public class ExcavateConfigScreen extends Screen {
         if (mx >= listX && mx < listX + listW && my >= listY && my < listY + listH) {
             return true;
         }
+
+        boolean overStepper = (mx >= vsMinusX && mx < vsMinusX + 14 || mx >= vsPlusX && mx < vsPlusX + 14) &&
+                my >= vsY && my < vsY + 14;
+        if (!overStepper) return super.mouseScrolled(rawMx, rawMy, delta);
         if (ExcavateServerConfig.LOCK_MAX_VEIN_SIZE.get()) return true;
         ExcavateSettings s = ExcavateSettings.get();
         s.setMaxVeinSize(s.getMaxVeinSize() + (int) Math.signum(delta) * 4);

@@ -3,6 +3,7 @@ package net.phoenixvine.excavate.vein;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.phoenixvine.excavate.api.MatchMode;
 import net.phoenixvine.excavate.api.VeinShape;
@@ -28,6 +29,10 @@ public final class VeinFinder {
 
         BlockState originState = level.getBlockState(origin);
 
+        if (originState.getDestroySpeed(level, origin) < 0.0F || originState.is(Blocks.BEDROCK)) {
+            return result;
+        }
+
         int cap = ExcavateServerConfig.effectiveMaxVeinSize();
         boolean diagonals = ExcavateSettings.get().isIncludeDiagonalNeighbors();
 
@@ -47,11 +52,11 @@ public final class VeinFinder {
 
                 BlockState candidate = level.getBlockState(next);
 
+                if (candidate.is(Blocks.BEDROCK) || candidate.getDestroySpeed(level, next) < 0.0F) {
+                    continue;
+                }
+
                 if (shape.traversesAir() && candidate.isAir()) {
-                    // Only let air-traversal continue through a face-adjacent (orthogonal) gap - a diagonal
-                    // neighbor touching only at an edge/corner has no real path through it, so treating a
-                    // diagonal air cell as passable would let the vein corner-cut through empty space between
-                    // two blocks that aren't actually connected by a voxel-adjacent path.
                     int dx = Math.abs(next.getX() - current.getX());
                     int dy = Math.abs(next.getY() - current.getY());
                     int dz = Math.abs(next.getZ() - current.getZ());
@@ -62,6 +67,8 @@ public final class VeinFinder {
                 }
 
                 if (!matchMode.matcher().matches(originState, candidate)) continue;
+
+                if (shape.id().equals("shapeless") && !BlockFamily.sameFamily(originState, candidate)) continue;
 
                 result.add(next);
                 queue.add(next);

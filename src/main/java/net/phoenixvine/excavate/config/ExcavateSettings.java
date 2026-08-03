@@ -15,6 +15,7 @@ public class ExcavateSettings {
 
     private boolean respectDurability = true;
     private boolean respectEnchantments = true;
+    private boolean collectToPlayer = true;
 
     private int maxVeinSize = 64;
     private boolean includeDiagonalNeighbors = false;
@@ -103,6 +104,14 @@ public class ExcavateSettings {
 
     public void setRespectEnchantments(boolean v) {
         respectEnchantments = v;
+    }
+
+    public boolean isCollectToPlayer() {
+        return collectToPlayer;
+    }
+
+    public void setCollectToPlayer(boolean v) {
+        collectToPlayer = v;
     }
 
     public int getMaxVeinSize() {

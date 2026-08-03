@@ -5,11 +5,6 @@ import net.minecraft.world.phys.Vec3;
 
 public final class FacingUtil {
 
-    // How much better-aligned the new horizontal candidate must be than sticking with the previous
-    // direction before we actually switch. Without this, a look angle sitting near the 45-degree boundary
-    // between two cardinal directions (e.g. north/east) flips back and forth on the tiniest mouse movement,
-    // even though the player hasn't moved to a new block - that's what made the preview visibly jiggle while
-    // just rotating the camera in place.
     private static final double HYSTERESIS_MARGIN = 0.12;
 
     private FacingUtil() {}

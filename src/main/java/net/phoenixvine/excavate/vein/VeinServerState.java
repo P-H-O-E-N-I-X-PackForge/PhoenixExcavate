@@ -20,10 +20,6 @@ public final class VeinServerState {
         }
     }
 
-    public static void clear(UUID player) {
-        ACTIVE.remove(player);
-    }
-
     public static Active active(UUID player) {
         return ACTIVE.get(player);
     }
