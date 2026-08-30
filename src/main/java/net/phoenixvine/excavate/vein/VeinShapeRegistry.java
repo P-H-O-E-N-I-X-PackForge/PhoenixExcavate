@@ -2,21 +2,32 @@ package net.phoenixvine.excavate.vein;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.phoenixvine.excavate.api.ExcavateAPI;
 import net.phoenixvine.excavate.api.VeinShape;
 import net.phoenixvine.excavate.config.ExcavateServerConfig;
 
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Central registry for {@link VeinShape} instances.
+ *
+ * <p> Manages shape registration and server-biased filtering.
+ *
+ * <p><strong>Registration Lifecycle:</strong> Built-in shapes should be initialized via
+ *   {@link #registerBuiltins()} during mod startup before shape lookups occur.
+ *
+ * @see VeinShape
+ * @see ExcavateServerConfig
+ * @apiNote This class is for internal use only, if you want to register new shapes go through {@link ExcavateAPI}
+ *
+ */
 public final class VeinShapeRegistry {
 
-    private static final BlockPos[] FACE_OFFSETS = {
-            new BlockPos(1, 0, 0), new BlockPos(-1, 0, 0),
-            new BlockPos(0, 1, 0), new BlockPos(0, -1, 0),
-            new BlockPos(0, 0, 1), new BlockPos(0, 0, -1)
-    };
 
     private static final List<VeinShape> SHAPES = new ArrayList<>();
+    private static final int SHAPELESS_LATERAL_LIMIT = 2;
 
     private VeinShapeRegistry() {}
 
@@ -24,49 +35,70 @@ public final class VeinShapeRegistry {
         SHAPES.clear();
 
         SHAPES.add(new VeinShape("blob", "phoenix_excavate.shape.blob",
-                (pos, origin, facing, diagonals) -> allOffsetPositions(pos, diagonals)));
-
+                VeinShapeRegistry::getBlobPositions));
         SHAPES.add(new VeinShape("tunnel", "phoenix_excavate.shape.tunnel",
-                (pos, origin, facing, diagonals) -> List.of(pos.relative(facing)), true));
-
+                VeinShapeRegistry::getTunnelPositions, true));
         SHAPES.add(new VeinShape("layer", "phoenix_excavate.shape.layer",
-                (pos, origin, facing, diagonals) -> allOffsetPositions(pos, diagonals).stream()
-                        .filter(p -> p.getY() == origin.getY())
-                        .toList(), true));
-
+                VeinShapeRegistry::getLayerPositions, true));
         SHAPES.add(new VeinShape("wall", "phoenix_excavate.shape.wall",
-                (pos, origin, facing, diagonals) -> {
-                    List<BlockPos> all = allOffsetPositions(pos, diagonals);
-                    Direction.Axis axis = facing.getAxis();
-                    if (axis == Direction.Axis.Y) {
-                        return all.stream().filter(p -> p.getY() == origin.getY()).toList();
-                    } else if (axis == Direction.Axis.X) {
-                        return all.stream().filter(p -> p.getX() == origin.getX()).toList();
-                    } else {
-                        return all.stream().filter(p -> p.getZ() == origin.getZ()).toList();
-                    }
-                }, true));
-
+                VeinShapeRegistry::getWallPositions, true));
         SHAPES.add(new VeinShape("staircase", "phoenix_excavate.shape.staircase",
-                (pos, origin, facing, diagonals) -> {
-
-                    int yOffset = pos.getY() - origin.getY();
-                    int horizOffset = (pos.getX() - origin.getX()) * facing.getStepX() +
-                            (pos.getZ() - origin.getZ()) * facing.getStepZ();
-                    if (yOffset + horizOffset != 0) return List.of();
-
-                    BlockPos nextFloor = pos.relative(facing).below();
-                    return List.of(nextFloor, nextFloor.above());
-                }, true));
-
+                VeinShapeRegistry::getStaircasePositions, true));
         SHAPES.add(new VeinShape("shapeless", "phoenix_excavate.shape.shapeless",
-                (pos, origin, facing, diagonals) -> elongatedOffsetPositions(pos, origin, facing, diagonals), true));
+                VeinShapeRegistry::elongatedOffsetPositions, true));
+    }
+
+    private static List<BlockPos> getBlobPositions(BlockPos pos, BlockPos origin, Direction facing,
+                                                   boolean diagonals) {
+        return allOffsetPositions(pos, diagonals);
+    }
+
+    private static List<BlockPos> getTunnelPositions(BlockPos pos, BlockPos origin, Direction facing,
+                                                     boolean diagonals) {
+        return List.of(pos.relative(facing));
+    }
+
+    private static List<BlockPos> getLayerPositions(BlockPos pos, BlockPos origin, Direction facing,
+                                                    boolean diagonals) {
+        List<BlockPos> all = allOffsetPositions(pos, diagonals);
+        List<BlockPos> out = new ArrayList<>(all.size());
+        for (BlockPos p : all) if (p.getY() == origin.getY()) out.add(p);
+        return out;
+    }
+
+    private static List<BlockPos> getWallPositions(BlockPos pos, BlockPos origin, Direction facing,
+                                                   boolean diagonals) {
+        List<BlockPos> all = allOffsetPositions(pos, diagonals);
+        List<BlockPos> out = new ArrayList<>(all.size());
+        switch (facing.getAxis()) {
+            case X -> { for (BlockPos p : all) if (p.getX() == origin.getX()) out.add(p); }
+            case Y -> { for (BlockPos p : all) if (p.getY() == origin.getY()) out.add(p); }
+            case Z -> { for (BlockPos p : all) if (p.getZ() == origin.getZ()) out.add(p); }
+        }
+        return out;
+    }
+
+    private static List<BlockPos> getStaircasePositions(BlockPos pos, BlockPos origin,
+                                                        Direction facing, boolean diagonals) {
+        int yOffset = pos.getY() - origin.getY();
+        int horizOffset = (pos.getX() - origin.getX()) * facing.getStepX() +
+                (pos.getZ() - origin.getZ()) * facing.getStepZ();
+        if (yOffset + horizOffset != 0) return List.of();
+
+        BlockPos nextFloor = pos.relative(facing).below();
+        return List.of(nextFloor, nextFloor.above());
     }
 
     public static void register(VeinShape shape) {
         SHAPES.removeIf(s -> s.id().equals(shape.id()));
         SHAPES.add(shape);
     }
+
+    private static final BlockPos[] FACE_OFFSETS = {
+            new BlockPos(1, 0, 0), new BlockPos(-1, 0, 0),
+            new BlockPos(0, 1, 0), new BlockPos(0, -1, 0),
+            new BlockPos(0, 0, 1), new BlockPos(0, 0, -1)
+    };
 
     public static List<VeinShape> all() {
         return List.copyOf(SHAPES);
@@ -78,66 +110,70 @@ public final class VeinShapeRegistry {
         return out;
     }
 
+
+    private static String path(String id) {
+        int i = id.indexOf(':');
+        return i < 0 ? id : id.substring(i + 1);
+    }
+
     public static VeinShape byId(String id) {
-        for (VeinShape s : SHAPES) if (s.id().equals(id)) return s;
+        String path = path(id);
+        for (VeinShape s : SHAPES) if (s.id().equals(path)) return s;
         return SHAPES.isEmpty() ? null : SHAPES.get(0);
     }
 
     public static VeinShape next(String currentId) {
         List<VeinShape> enabled = allEnabled();
         if (enabled.isEmpty()) return null;
-        int idx = 0;
+
+        String path = path(currentId);
         for (int i = 0; i < enabled.size(); i++) {
-            if (enabled.get(i).id().equals(currentId)) {
-                idx = i;
-                break;
+            if (enabled.get(i).id().equals(path)) {
+                return enabled.get((i + 1) % enabled.size());
             }
         }
-        return enabled.get((idx + 1) % enabled.size());
+
+        return enabled.get(0);
     }
 
-    private static final int SHAPELESS_LATERAL_LIMIT = 2;
-
-    private static List<BlockPos> elongatedOffsetPositions(BlockPos pos, BlockPos origin, Direction facing, boolean diagonals) {
+    private static List<BlockPos> elongatedOffsetPositions(BlockPos pos, BlockPos origin,
+                                                           Direction facing, boolean diagonals) {
         List<BlockPos> all = allOffsetPositions(pos, diagonals);
-        Direction.Axis primaryAxis = facing.getAxis();
+        Direction.Axis axis = facing.getAxis();
+
         List<BlockPos> out = new ArrayList<>(all.size());
         for (BlockPos candidate : all) {
-            int lateralA;
-            int lateralB;
-            switch (primaryAxis) {
-                case X -> {
-                    lateralA = candidate.getY() - origin.getY();
-                    lateralB = candidate.getZ() - origin.getZ();
-                }
-                case Y -> {
-                    lateralA = candidate.getX() - origin.getX();
-                    lateralB = candidate.getZ() - origin.getZ();
-                }
-                default -> {
-                    lateralA = candidate.getX() - origin.getX();
-                    lateralB = candidate.getY() - origin.getY();
-                }
-            }
-            if (Math.abs(lateralA) <= SHAPELESS_LATERAL_LIMIT && Math.abs(lateralB) <= SHAPELESS_LATERAL_LIMIT) {
-                out.add(candidate);
-            }
+            int dx = candidate.getX() - origin.getX();
+            int dy = candidate.getY() - origin.getY();
+            int dz = candidate.getZ() - origin.getZ();
+
+            boolean keep = switch (axis) {
+                case X -> Math.abs(dy) <= SHAPELESS_LATERAL_LIMIT && Math.abs(dz) <= SHAPELESS_LATERAL_LIMIT;
+                case Y -> Math.abs(dx) <= SHAPELESS_LATERAL_LIMIT && Math.abs(dz) <= SHAPELESS_LATERAL_LIMIT;
+                case Z -> Math.abs(dx) <= SHAPELESS_LATERAL_LIMIT && Math.abs(dy) <= SHAPELESS_LATERAL_LIMIT;
+            };
+            if (keep) out.add(candidate);
         }
         return out;
     }
 
+    // This runs once per BFS-visited block while vein-mining (up to hundreds of times per single
+    // vein), so it's a hot path - a Stream pipeline here (each call allocating a Stream, its
+    // Spliterator, and boxed lambdas for what's fundamentally a fixed 6- or 26-element loop) was
+    // producing enough short-lived garbage per vein to cause visible GC stutters while mining.
     private static List<BlockPos> allOffsetPositions(BlockPos pos, boolean diagonals) {
         if (!diagonals) {
             List<BlockPos> out = new ArrayList<>(FACE_OFFSETS.length);
-            for (BlockPos o : FACE_OFFSETS) out.add(pos.offset(o));
+            for (BlockPos offset : FACE_OFFSETS) out.add(pos.offset(offset));
             return out;
         }
         List<BlockPos> out = new ArrayList<>(26);
+        int px = pos.getX(), py = pos.getY(), pz = pos.getZ();
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
                     if (dx == 0 && dy == 0 && dz == 0) continue;
-                    out.add(pos.offset(dx, dy, dz));
+                    out.add(new BlockPos(px + dx, py + dy, pz + dz));
                 }
             }
         }

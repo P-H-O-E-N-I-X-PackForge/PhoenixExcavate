@@ -31,7 +31,7 @@ public final class ExcavateServerConfigOverrides {
             " Phoenix Excavate - GLOBAL server-config overrides\n" +
             "=================================================================================\n" +
             " Every value below is auto-generated at its CURRENT DEFAULT. On its own, this file\n" +
-            " does nothing - a value only becomes an active override once you edit it away from\n" +
+            " does nothing. A value only becomes an active override once you edit it away from\n" +
             " its shipped default. Anything left matching the default (including keys generated\n" +
             " by an older version of this mod whose default has since changed) is ignored, the\n" +
             " same as if the key weren't in this file at all.\n" +

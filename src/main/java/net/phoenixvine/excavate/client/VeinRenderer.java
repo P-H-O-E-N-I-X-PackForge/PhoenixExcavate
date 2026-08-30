@@ -22,6 +22,7 @@ import net.phoenixvine.excavate.api.MatchMode;
 import net.phoenixvine.excavate.api.VeinShape;
 import net.phoenixvine.excavate.config.ExcavateSettings;
 import net.phoenixvine.excavate.vein.MatchModeRegistry;
+import net.phoenixvine.wiki.theme.PhoenixTheme;
 
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class VeinRenderer {
         List<BlockPos> preview = VeinPreviewTracker.getPreview();
         if (preview.size() <= 1) return;
 
-        ExcavateThemePalette.refresh(ExcavateTheme.current());
+        ExcavateThemePalette.refresh(PhoenixTheme.current());
         String override = ExcavateSettings.get().getOutlineColorHex();
         int accent = override.isBlank() ? ExcavateThemePalette.ACCENT :
                 ExcavateUIKit.parseHexColor(override, ExcavateThemePalette.ACCENT);
@@ -82,7 +83,7 @@ public class VeinRenderer {
 
             MatchMode mode = MatchModeRegistry.byId(ExcavateSettings.get().getMatchModeId());
             String modeName = mode == null ? ExcavateSettings.get().getMatchModeId() :
-                    net.minecraft.network.chat.Component.translatable(mode.translationKey()).getString();
+                    net.minecraft.network.chat.Component.translatable(mode.translationKey().toString()).getString();
             text = "§cVein: no match §7(mode: §f" + modeName + "§7)";
         } else {
             VeinShape shape = VeinClientState.getShape();

@@ -41,15 +41,16 @@ public final class ExcavateAPI {
 
     public static VeinShape getActiveShape(Player player) {
         VeinServerState.Active active = VeinServerState.active(player.getUUID());
-        return active == null ? null : VeinShapeRegistry.byId(active.shapeId());
+        return active == null ? null : VeinShapeRegistry.byId(active.shapeId().toString());
     }
 
     public static MatchMode getActiveMatchMode(Player player) {
         VeinServerState.Active active = VeinServerState.active(player.getUUID());
-        return active == null ? null : MatchModeRegistry.byId(active.matchModeId());
+        return active == null ? null : MatchModeRegistry.byId(active.matchModeId().toString());
     }
 
     public static final String FEATURE_VEIN_MINING = "vein_mining";
+    public static final String FEATURE_VEIN_PLACING = "vein_placing";
 
     private static final Map<String, BooleanSupplier> FEATURE_GATES = new ConcurrentHashMap<>();
     private static final Map<String, BiPredicate<Player, ItemStack>> ITEM_GATES = new ConcurrentHashMap<>();
@@ -63,6 +64,7 @@ public final class ExcavateAPI {
 
     static {
         KNOWN_FEATURE_IDS.add(FEATURE_VEIN_MINING);
+        KNOWN_FEATURE_IDS.add(FEATURE_VEIN_PLACING);
     }
 
     public static void registerFeatureGate(String featureId, BooleanSupplier check) {

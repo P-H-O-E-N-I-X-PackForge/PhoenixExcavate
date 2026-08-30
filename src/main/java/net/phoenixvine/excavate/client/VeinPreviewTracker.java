@@ -69,7 +69,8 @@ public class VeinPreviewTracker {
 
         VeinShape shape = VeinClientState.getShape();
         MatchMode matchMode = MatchModeRegistry.byId(matchModeId);
-        preview = mc.level == null ? List.of() : VeinFinder.find(mc.level, origin, facing, matchMode, shape);
+        preview = mc.level == null || mc.player == null ? List.of()
+                : VeinFinder.find(mc.level, origin, facing, matchMode, shape, mc.player.getMainHandItem());
     }
 
     private static void clear() {

@@ -11,18 +11,25 @@ public class ExcavateSettings {
 
     private boolean respectHunger = true;
 
-    private boolean generalMiningExhaustion = false;
+    private boolean generalMiningExhaustion = true;
 
     private boolean respectDurability = true;
     private boolean respectEnchantments = true;
     private boolean collectToPlayer = true;
+    private boolean respectToolTier = true;
+    private boolean placeConsumesInventory = true;
+    private boolean placeReplacesMatching = false;
 
     private int maxVeinSize = 64;
-    private boolean includeDiagonalNeighbors = false;
+    private boolean includeDiagonalNeighbors = true;
 
     private boolean holdToActivate = true;
 
     private String matchModeId = "match_any";
+
+    private String veinMode = "MINE";
+
+    private String veinShapeId = "shapeless";
 
     private String theme = "DARK";
 
@@ -90,6 +97,22 @@ public class ExcavateSettings {
         matchModeId = v;
     }
 
+    public String getVeinMode() {
+        return veinMode == null || veinMode.isBlank() ? "MINE" : veinMode;
+    }
+
+    public void setVeinMode(String v) {
+        veinMode = v;
+    }
+
+    public String getVeinShapeId() {
+        return veinShapeId == null || veinShapeId.isBlank() ? "shapeless" : veinShapeId;
+    }
+
+    public void setVeinShapeId(String v) {
+        veinShapeId = v;
+    }
+
     public boolean isRespectDurability() {
         return respectDurability;
     }
@@ -152,5 +175,29 @@ public class ExcavateSettings {
 
     public void setOutlineColorHex(String hex) {
         outlineColorHex = hex == null ? "" : hex;
+    }
+
+    public boolean isRespectToolTier() {
+        return respectToolTier;
+    }
+
+    public void setRespectToolTier(boolean respectToolTier) {
+        this.respectToolTier = respectToolTier;
+    }
+
+    public boolean isPlaceConsumesInventory() {
+        return placeConsumesInventory;
+    }
+
+    public void setPlaceConsumesInventory(boolean v) {
+        placeConsumesInventory = v;
+    }
+
+    public boolean isPlaceReplacesMatching() {
+        return placeReplacesMatching;
+    }
+
+    public void setPlaceReplacesMatching(boolean v) {
+        placeReplacesMatching = v;
     }
 }

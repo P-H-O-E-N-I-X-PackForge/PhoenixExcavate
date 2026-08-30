@@ -21,7 +21,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.api.ExcavateAPI;
-
 import net.phoenixvine.excavate.api.MatchMode;
 import net.phoenixvine.excavate.api.VeinShape;
 import net.phoenixvine.excavate.api.event.VeinMineEvent;
@@ -32,11 +31,10 @@ import net.phoenixvine.excavate.config.ExcavateSettings;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
 public class VeinBreaker {
@@ -54,15 +52,14 @@ public class VeinBreaker {
         }
     }
 
-    private static final Map<UUID, Deque<Job>> JOBS = new ConcurrentHashMap<>();
-
-    private static final Map<UUID, Long> LAST_TRIGGER_TICK = new ConcurrentHashMap<>();
+    private static final Map<UUID, Deque<Job>> JOBS = new HashMap<>();
+    private static final Map<UUID, Long> LAST_TRIGGER_TICK = new HashMap<>();
 
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
         if (event.isCanceled() || Boolean.TRUE.equals(PROCESSING.get())) return;
         if (!(event.getPlayer() instanceof ServerPlayer player) || !(event.getLevel() instanceof ServerLevel level)) return;
-        
+
         try {
             PROCESSING.set(true);
             handleBreak(event, player, level);
@@ -74,7 +71,6 @@ public class VeinBreaker {
     }
 
     private static void logFailure(ServerPlayer player, BlockEvent.BreakEvent event, Throwable t) {
-        
         String playerName = (player != null) ? player.getName().getString() : "Unknown Player";
         String posString = (event != null && event.getPos() != null) ? event.getPos().toString() : "Unknown Pos";
 
@@ -94,7 +90,7 @@ public class VeinBreaker {
         }
 
         VeinServerState.Active active = VeinServerState.active(player.getUUID());
-        if (active == null) return;
+        if (active == null || active.mode() != VeinMode.MINE) return;
 
         ItemStack heldTool = player.getMainHandItem();
 
@@ -107,14 +103,19 @@ public class VeinBreaker {
             return;
         }
 
-        if (!ExcavateServerConfig.isShapeAllowed(active.shapeId()) ||
-                !ExcavateServerConfig.isMatchModeAllowed(active.matchModeId())) {
+        String shapeId = active.shapeId().toString();
+        String matchModeId = active.matchModeId().toString();
+
+        if (!ExcavateServerConfig.isShapeAllowed(shapeId) ||
+                !ExcavateServerConfig.isMatchModeAllowed(matchModeId)) {
             return;
         }
 
-        VeinShape shape = VeinShapeRegistry.byId(active.shapeId());
-        MatchMode matchMode = MatchModeRegistry.byId(active.matchModeId());
-        if (shape == null || matchMode == null) return;
+        var config = VeinUtil.getValidatedConfig(active);
+        if (config == null) return;
+
+        VeinShape shape = config.shape();
+        MatchMode matchMode = config.matchMode();
 
         long now = level.getGameTime();
         Long lastTrigger = LAST_TRIGGER_TICK.get(player.getUUID());
@@ -124,15 +125,14 @@ public class VeinBreaker {
 
         BlockPos origin = event.getPos();
         Direction facing = FacingUtil.facingOf(player.getLookAngle());
-        List<BlockPos> vein = VeinFinder.find(level, origin, facing, matchMode, shape);
+        List<BlockPos> vein = VeinFinder.find(level, origin, facing, matchMode, shape, heldTool);
         if (vein.size() <= 1) return;
 
         List<BlockPos> extras = new ArrayList<>(vein.subList(1, vein.size()));
 
         VeinMineEvent.Pre pre = new VeinMineEvent.Pre(player, origin, extras);
         MinecraftForge.EVENT_BUS.post(pre);
-        if (pre.isCanceled()) return;
-        if (pre.getCandidates().isEmpty()) return;
+        if (pre.isCanceled() || pre.getCandidates().isEmpty()) return;
 
         BlockState originState = level.getBlockState(origin);
         SoundType soundType = originState.getSoundType();
@@ -144,8 +144,7 @@ public class VeinBreaker {
 
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-        if (JOBS.isEmpty()) return;
+        if (event.phase != TickEvent.Phase.END || JOBS.isEmpty()) return;
 
         try {
             PROCESSING.set(true);
@@ -155,26 +154,20 @@ public class VeinBreaker {
         }
     }
 
+    @SuppressWarnings("Duplicates")
     private static void drainJobs() {
         int budget = ExcavateServerConfig.VEIN_BLOCKS_PER_TICK.get();
         var server = ServerLifecycleHooks.getCurrentServer();
 
-        Iterator<Map.Entry<UUID, Deque<Job>>> playerIt = JOBS.entrySet().iterator();
-        while (playerIt.hasNext()) {
-            Map.Entry<UUID, Deque<Job>> entry = playerIt.next();
+        JOBS.entrySet().removeIf(entry -> {
             Deque<Job> queue = entry.getValue();
             Job job = queue.peek();
-            if (job == null) {
-                playerIt.remove();
-                continue;
-            }
+            if (job == null) return true;
 
             ServerPlayer player = server == null ? null : server.getPlayerList().getPlayer(entry.getKey());
             if (player == null || !(player.level() instanceof ServerLevel level)) {
-
                 queue.clear();
-                playerIt.remove();
-                continue;
+                return true;
             }
 
             drainOneJob(player, level, job, budget);
@@ -185,17 +178,23 @@ public class VeinBreaker {
                     MinecraftForge.EVENT_BUS.post(new VeinMineEvent.Post(player, job.origin, job.broken));
                 }
             }
-            if (queue.isEmpty()) playerIt.remove();
-        }
+
+            return queue.isEmpty();
+        });
     }
 
     private static void drainOneJob(ServerPlayer player, ServerLevel level, Job job, int budget) {
         ItemStack tool = player.getMainHandItem();
         boolean bareHanded = tool.isEmpty();
 
+        boolean respectDurability = ExcavateServerConfig.effectiveRespectDurability() && !bareHanded;
+        boolean respectEnchantments = ExcavateServerConfig.effectiveRespectEnchantments();
+        boolean collectToPlayer = ExcavateServerConfig.effectiveCollectToPlayer();
+        boolean respectHunger = ExcavateServerConfig.effectiveRespectHunger();
+
         int processed = 0;
         while (processed < budget && !job.remaining.isEmpty()) {
-            if (ExcavateServerConfig.effectiveRespectDurability() && !bareHanded && tool.isEmpty()) {
+            if (respectDurability && tool.isEmpty()) {
                 job.remaining.clear();
                 break;
             }
@@ -203,7 +202,7 @@ public class VeinBreaker {
             BlockPos pos = job.remaining.poll();
             processed++;
 
-            assert pos != null;
+            if (pos == null) continue;
             BlockState state = level.getBlockState(pos);
             if (state.isAir()) continue;
 
@@ -214,10 +213,9 @@ public class VeinBreaker {
             if (extraEvent.isCanceled()) continue;
 
             BlockEntity be = level.getBlockEntity(pos);
+            ItemStack dropTool = respectEnchantments ? tool : ItemStack.EMPTY;
 
-            ItemStack dropTool = ExcavateServerConfig.effectiveRespectEnchantments() ? tool : ItemStack.EMPTY;
-            if (ExcavateServerConfig.effectiveCollectToPlayer()) {
-
+            if (collectToPlayer) {
                 List<ItemStack> drops = Block.getDrops(state, level, pos, be, player, dropTool);
                 level.destroyBlock(pos, false, player);
                 giveToPlayer(player, drops);
@@ -225,12 +223,13 @@ public class VeinBreaker {
                 level.destroyBlock(pos, false, player);
                 Block.dropResources(state, level, pos, be, player, dropTool);
             }
+
             level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
                     pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 12, 0.3, 0.3, 0.3, 0.0);
 
             job.broken++;
 
-            if (ExcavateServerConfig.effectiveRespectDurability() && !bareHanded) {
+            if (respectDurability) {
                 tool.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(InteractionHand.MAIN_HAND));
                 if (tool.isEmpty()) {
                     job.remaining.clear();
@@ -238,7 +237,8 @@ public class VeinBreaker {
                 }
             }
 
-            if (ExcavateServerConfig.effectiveRespectHunger()) {
+            // Apply exhaustion
+            if (respectHunger) {
                 player.causeFoodExhaustion(0.005F);
             }
         }
@@ -253,5 +253,4 @@ public class VeinBreaker {
             }
         }
     }
-
 }

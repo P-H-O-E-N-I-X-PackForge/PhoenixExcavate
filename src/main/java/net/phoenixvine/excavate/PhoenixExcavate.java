@@ -18,6 +18,7 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.phoenixvine.excavate.network.ExcavateNetwork;
 import net.phoenixvine.excavate.vein.MatchModeRegistry;
 import net.phoenixvine.excavate.vein.VeinShapeRegistry;
+import net.phoenixvine.wiki.client.suite.SuiteHudBar;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +45,7 @@ public class PhoenixExcavate {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            LOGGER.info("[Phoenix Ultimine] Bootstrapping vein miner...");
+            LOGGER.info("[Phoenix Excavate] Bootstrapping vein miner...");
             ExcavateNetwork.init();
             ExcavateSettings.get();
             MatchListConfig.load();
@@ -54,7 +55,17 @@ public class PhoenixExcavate {
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
-        LOGGER.info("[Phoenix Ultimine] Client setup complete.");
+        LOGGER.info("[Phoenix Excavate] Client setup complete.");
+
+        SuiteHudBar.register(MOD_ID, SuiteHudBar.PRIORITY_EXCAVATE,
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID,
+                        "textures/gui/suite_bar_icon.png"),
+                net.minecraft.network.chat.Component.literal("§fOpen Excavate Settings"),
+                () -> {
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                    net.minecraft.client.gui.screens.Screen current = mc.screen;
+                    mc.setScreen(new net.phoenixvine.excavate.client.ExcavateConfigScreen(current));
+                });
     }
 
     public static ResourceLocation id(String path) {
