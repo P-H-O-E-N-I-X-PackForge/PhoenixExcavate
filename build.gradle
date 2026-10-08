@@ -113,7 +113,7 @@ dependencies {
     modCompileOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
     modRuntimeOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
 
-    modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.8")
+    modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.5.7")
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
