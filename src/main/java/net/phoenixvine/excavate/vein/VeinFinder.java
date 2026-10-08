@@ -17,7 +17,6 @@ public final class VeinFinder {
 
     private VeinFinder() {}
 
-
     private static final int WALL_DEPTH_TOLERANCE = 1;
     private static final int STAIRCASE_STEP_TOLERANCE = 1;
 
@@ -33,10 +32,10 @@ public final class VeinFinder {
         if (isUnbreakable(level, startPos, originState)) return result;
 
         int cap = ExcavateServerConfig.effectiveMaxVeinSize();
-        int maxExplored = Math.max(cap * 8, 512);
 
         ExcavateSettings settings = ExcavateSettings.get();
         boolean diagonals = settings.isIncludeDiagonalNeighbors();
+        int maxExplored = exploreBudget(cap, diagonals);
         boolean toolTierEnabled = settings.isRespectToolTier();
         boolean isShapeless = "shapeless".equals(shape.id());
 
@@ -50,7 +49,7 @@ public final class VeinFinder {
             BlockPos current = queue.poll();
 
             for (BlockPos next : shape.expander().neighborsOf(current, origin, facing, diagonals)) {
-                // Consolidated bounds guard check
+                
                 if (result.size() >= cap || visited.size() >= maxExplored) break;
                 if (!visited.add(next)) continue;
 
@@ -69,7 +68,7 @@ public final class VeinFinder {
                     continue;
                 }
 
-                if (!matchMode.matcher().matches(originState, candidate)) continue;
+                if (!sameVein(matchMode, originState, candidate)) continue;
                 if (isShapeless && !BlockFamily.sameFamily(originState, candidate)) continue;
 
                 result.add(next);
@@ -89,10 +88,10 @@ public final class VeinFinder {
         if (matchMode == null || shape == null) return result;
 
         int cap = ExcavateServerConfig.effectiveMaxVeinSize();
-        int maxExplored = Math.max(cap * 8, 512);
 
         ExcavateSettings settings = ExcavateSettings.get();
         boolean diagonals = settings.isIncludeDiagonalNeighbors();
+        int maxExplored = exploreBudget(cap, diagonals);
         boolean replaceMatching = ExcavateServerConfig.effectivePlaceReplacesMatching();
 
         Set<BlockPos> visited = new HashSet<>();
@@ -121,7 +120,7 @@ public final class VeinFinder {
                     continue;
                 }
 
-                if (!isUnbreakable(level, target, candidate) && matchMode.matcher().matches(anchorState, candidate)) {
+                if (!isUnbreakable(level, target, candidate) && sameVein(matchMode, anchorState, candidate)) {
                     if (replaceMatching && onPlane) {
                         result.add(target);
                     }
@@ -132,7 +131,6 @@ public final class VeinFinder {
 
         return result;
     }
-
 
     private static List<BlockPos> placementNeighborsOf(VeinShape shape, BlockPos pos, BlockPos origin,
                                                         Direction facing, boolean diagonals) {
@@ -155,7 +153,6 @@ public final class VeinFinder {
             default -> shape.expander().neighborsOf(pos, origin, facing, diagonals);
         };
     }
-
 
     private static boolean isOnShapePlane(VeinShape shape, BlockPos pos, BlockPos origin, Direction facing) {
         return switch (shape.id()) {
@@ -188,6 +185,14 @@ public final class VeinFinder {
                 .filter(p -> !p.equals(pos))
                 .map(BlockPos::immutable)
                 .toList();
+    }
+
+    private static int exploreBudget(int cap, boolean diagonals) {
+        return Math.max(cap * (diagonals ? 27 : 7), 1024);
+    }
+
+    private static boolean sameVein(MatchMode matchMode, BlockState origin, BlockState candidate) {
+        return matchMode.matcher().matches(origin, candidate) || BlockFamily.samePlantVein(origin, candidate);
     }
 
     static boolean isUnbreakable(BlockGetter level, BlockPos pos, BlockState state) {

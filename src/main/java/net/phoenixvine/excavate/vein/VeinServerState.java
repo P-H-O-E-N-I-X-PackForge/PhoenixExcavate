@@ -9,15 +9,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * This class handles the server side active state for the shape and match mode.
- *
- * <p> Sets the active state or removes it per player.
- *
- * @see VeinShapeRegistry
- * @apiNote This class is for internal use only. Addons should not be able to mutate the server state directly.
- *
- */
 public final class VeinServerState {
 
     public record Active(ResourceLocation shapeId, ResourceLocation matchModeId, VeinMode mode) {}

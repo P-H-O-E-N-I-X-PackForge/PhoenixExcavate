@@ -1,7 +1,10 @@
 package net.phoenixvine.excavate.vein;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.Tags;
@@ -34,8 +37,18 @@ public final class BlockFamily {
             BlockTags.TERRACOTTA
     );
 
+    public static boolean isBonemealablePlant(BlockState state) {
+        return state.getBlock() instanceof BonemealableBlock &&
+                state.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).isEmpty();
+    }
+
+    public static boolean samePlantVein(BlockState origin, BlockState candidate) {
+        return isBonemealablePlant(origin) && isBonemealablePlant(candidate);
+    }
+
     public static boolean sameFamily(BlockState origin, BlockState candidate) {
         if (origin.getBlock() == candidate.getBlock()) return true;
+        if (samePlantVein(origin, candidate)) return true;
 
         if (isStone(origin) && isStone(candidate)) {
             return true;

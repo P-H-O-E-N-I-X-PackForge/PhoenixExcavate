@@ -21,10 +21,7 @@ import java.util.List;
 public class ExcavateConfigScreen extends Screen {
 
     private static final int ROW_H = 18;
-    // These floors must stay >= what the fixed layout below actually needs (28 top offset + theme/
-    // color/match/vein rows + 10 toggle rows ~= 360px tall; tab row + control row + reasonable list
-    // width ~= 460px wide). Anything smaller and content overflows the panel with no clipping/scroll
-    // to save it - see calculateLayout() for the row math this is derived from.
+
     private static final int MIN_PANEL_W = 480, MAX_PANEL_W = 620;
     private static final int MIN_PANEL_H = 380, MAX_PANEL_H = 420;
     private static final int[] SWATCHES = { 0xFFFFFF, 0x33CCFF, 0xFF4444, 0x44DD66, 0xFFCC33, 0xCC66FF, 0xFF8833 };
@@ -38,12 +35,6 @@ public class ExcavateConfigScreen extends Screen {
 
     private int panelX, panelY, panelW, panelH;
 
-    /** When the panel's own minimum size (MIN_PANEL_W/H + margin) doesn't fit the real screen
-     * (small window / high GUI scale), the whole panel is drawn through a uniform shrink instead of
-     * overflowing off-screen - text and widgets scale together, same as Minecraft's own GUI Scale
-     * option. All layout math (panelX/panelY/panelW/panelH, row positions, widget bounds) stays in
-     * this "virtual" pre-scale pixel space; only render() and the mouse handlers convert between it
-     * and real screen pixels. */
     private float uiScale = 1f;
     private int vw, vh;
     private int matchModeRowY, themeRowY, vsY;
@@ -68,8 +59,7 @@ public class ExcavateConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        // If even the panel's minimum size wouldn't fit the real screen, shrink everything
-        // uniformly to fit instead of letting it overflow - see uiScale's own doc comment.
+
         float neededW = MIN_PANEL_W + 40f;
         float neededH = MIN_PANEL_H + 40f;
         uiScale = (width < neededW || height < neededH) ?
@@ -77,13 +67,11 @@ public class ExcavateConfigScreen extends Screen {
         vw = Math.round(width / uiScale);
         vh = Math.round(height / uiScale);
 
-        // Calculate responsive panel size based on standard width/height
         panelW = Math.min(MAX_PANEL_W, Math.max(MIN_PANEL_W, vw - 40));
         panelH = Math.min(MAX_PANEL_H, Math.max(MIN_PANEL_H, vh - 40));
         panelX = (vw - panelW) / 2;
         panelY = (vh - panelH) / 2;
 
-        // Right column bounds
         listX = panelX + panelW / 2 + 10;
         listY = panelY + 46;
         listW = panelX + panelW - 12 - listX;
@@ -164,7 +152,6 @@ public class ExcavateConfigScreen extends Screen {
             ty += ROW_H;
         }
 
-        // Right side layout components
         tabY = panelY + 28;
         tabW = (listW - 8 - RESET_LIST_BTN_W) / 2;
         oreTabX = listX;
@@ -282,9 +269,7 @@ public class ExcavateConfigScreen extends Screen {
         listRowRects.clear();
         List<MatchEntry> entries = MatchListConfig.get(activeList);
         int ly = listY + 2;
-        // A few px of left slack: enableScissor's clip edge lands slightly right of listX itself
-        // (rounding/DPI quirk distinct from fill/drawString), enough to shave off entry text's
-        // leading character. Nothing is drawn left of listX+4 in this region, so the slack is safe.
+
         enableScissorScaled(g, listX - 4, listY, listX + listW, listY + listH);
         for (int i = 0; i < entries.size() && ly < listY + listH; i++) {
             MatchEntry e = entries.get(i);
@@ -329,13 +314,6 @@ public class ExcavateConfigScreen extends Screen {
         g.drawCenteredString(font, (active ? "§f" : "§7") + label, x + w / 2, y + 4, active ? ExcavateThemePalette.TEXT : ExcavateThemePalette.TEXT_DIM);
     }
 
-    /** Unlike fill()/drawString(), GuiGraphics#enableScissor does not appear to follow the extra
-     * g.pose().scale(uiScale, uiScale, 1f) this screen pushes in render() - it only accounts for
-     * Minecraft's own built-in GUI Scale, not an ad-hoc scale a mod pushes on top of it. So the
-     * scissor rect has to be converted to the same real-pixel space by hand, or it clips against
-     * stale (unscaled) coordinates that no longer line up with where the scaled content actually
-     * lands - invisible when uiScale == 1 (fullscreen, or any window big enough to need no shrink),
-     * but enough to clip the whole list away once uiScale < 1 actually kicks in (small/windowed). */
     private void enableScissorScaled(GuiGraphics g, int x1, int y1, int x2, int y2) {
         g.enableScissor(Math.round(x1 * uiScale), Math.round(y1 * uiScale), Math.round(x2 * uiScale),
                 Math.round(y2 * uiScale));

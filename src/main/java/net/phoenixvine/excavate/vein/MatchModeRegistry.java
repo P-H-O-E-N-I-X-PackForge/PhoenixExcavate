@@ -62,13 +62,6 @@ public final class MatchModeRegistry {
         return out;
     }
 
-    /**
-     * Ids round-trip through a {@link ResourceLocation} on the way here from the active-state sync
-     * packet (which forces a namespace, defaulting to "minecraft" for a bare id like "match_ore"),
-     * while a mode's real id is namespaced "phoenix_excavate" - comparing by path only sidesteps
-     * that mismatch instead of requiring every caller to already know/reconstruct the right
-     * namespace.
-     */
     private static String path(String id) {
         int i = id.indexOf(':');
         return i < 0 ? id : id.substring(i + 1);

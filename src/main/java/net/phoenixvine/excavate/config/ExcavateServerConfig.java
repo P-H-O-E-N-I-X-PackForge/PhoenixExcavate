@@ -83,7 +83,6 @@ public class ExcavateServerConfig {
                         "even letting players opt into a big vein size too easy/game-breaking on its own.")
                 .define("lockMaxVeinSize", false);
 
-
         MAX_VEIN_SIZE_CAP = builder
                 .comment("Hard ceiling on how many blocks a single vein-mine can break, regardless of any player's own max-vein-size preference.")
                 .defineInRange("maxVeinSizeCap", 256, 1, 16096);

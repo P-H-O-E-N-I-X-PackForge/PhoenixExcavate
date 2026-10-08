@@ -230,14 +230,14 @@ public class VeinBreaker {
             job.broken++;
 
             if (respectDurability) {
-                tool.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(InteractionHand.MAIN_HAND));
+
+                tool.mineBlock(level, state, pos, player);
                 if (tool.isEmpty()) {
                     job.remaining.clear();
                     break;
                 }
             }
 
-            // Apply exhaustion
             if (respectHunger) {
                 player.causeFoodExhaustion(0.005F);
             }

@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.BlockSnapshot;
@@ -31,7 +32,6 @@ import net.phoenixvine.excavate.compat.ClaimProtectionCompat;
 import net.phoenixvine.excavate.config.ExcavateServerConfig;
 
 import java.util.*;
-
 
 @Mod.EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
 public class VeinPlacer {
@@ -119,7 +119,6 @@ public class VeinPlacer {
 
         LAST_TRIGGER_TICK.put(player.getUUID(), now);
 
-
         targets.remove(0);
         if (targets.isEmpty()) return;
 
@@ -177,19 +176,25 @@ public class VeinPlacer {
 
             BlockState existing = level.getBlockState(pos);
             boolean replacingSolid = !existing.canBeReplaced();
-            if (replacingSolid && (VeinFinder.isUnbreakable(level, pos, existing) ||
-                    !ExcavateServerConfig.effectivePlaceReplacesMatching() ||
+            boolean replaceBlocks = ExcavateServerConfig.effectivePlaceReplacesMatching();
+            if (replacingSolid && (VeinFinder.isUnbreakable(level, pos, existing) || !replaceBlocks ||
                     !job.matchMode.matcher().matches(job.anchorState, existing))) {
                 continue;
             }
+            
+            if (!replaceBlocks && !existing.getFluidState().isEmpty()) continue;
 
+            if (!level.mayInteract(player, pos)) continue;
             if (!ClaimProtectionCompat.canPlace(player, pos)) continue;
+
+            BlockState placedState = computePlacementState(player, job.blockItem, pos, job.face);
+            if (!placedState.canSurvive(level, pos)) continue;
+            if (!level.isUnobstructed(placedState, pos, CollisionContext.of(player))) continue;
 
             BlockSnapshot snapshot = BlockSnapshot.create(level.dimension(), level, pos);
             BlockEvent.EntityPlaceEvent placeEvent = new BlockEvent.EntityPlaceEvent(snapshot, existing, player);
             MinecraftForge.EVENT_BUS.post(placeEvent);
             if (placeEvent.isCanceled()) continue;
-
 
             if (replacingSolid) {
                 var blockEntity = level.getBlockEntity(pos);
@@ -200,9 +205,6 @@ public class VeinPlacer {
                     Block.dropResources(existing, level, pos, blockEntity, player, ItemStack.EMPTY);
                 }
             }
-
-
-            BlockState placedState = computePlacementState(player, job.blockItem, pos, job.face);
 
             level.setBlockAndUpdate(pos, placedState);
             SoundType soundType = placedState.getSoundType();

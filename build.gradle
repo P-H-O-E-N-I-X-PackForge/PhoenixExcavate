@@ -32,6 +32,10 @@ repositories {
         dir 'libs'
     }
     maven {
+        name = "Repsy"
+        url = uri("https://repo.repsy.io/mvn/user75142941/phoenixsuite")
+    }
+    maven {
         // Curse Forge File
         url "https://cursemaven.com/"
         content {
@@ -103,13 +107,13 @@ dependencies {
     modRuntimeOnly("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")
     modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
 
-    modCompileOnly('curse.maven:phoenix-domains-1622899:8770938')
-    modRuntimeOnly('curse.maven:phoenix-domains-1622899:8770938')
+    modCompileOnly('net.phoenixvine.domains:phoenix_domains:2.4')
+    modRuntimeOnly('net.phoenixvine.domains:phoenix_domains:2.4')
 
-    modCompileOnly('curse.maven:phoenix-guilds-1612085:8743646')
-    modRuntimeOnly('curse.maven:phoenix-guilds-1612085:8743646')
+    modCompileOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
+    modRuntimeOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
 
-    modImplementation("curse.maven:phoenixwiki-1647798:8735977")
+    modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.8")
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -148,4 +152,23 @@ tasks.named('jar', Jar).configure { finalizedBy 'reobfJar' }
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
     options.release.set(17)
+}
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            artifactId = base.archivesName.get()
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = "Repsy"
+            url = uri("https://repo.repsy.io/mvn/user75142941/phoenixsuite")
+            credentials {
+                username = project.findProperty("repsyUsername") ?: System.getenv("REPSY_USERNAME")
+                password = project.findProperty("repsyPassword") ?: System.getenv("REPSY_PASSWORD")
+            }
+        }
+    }
 }

@@ -9,22 +9,7 @@ import net.phoenixvine.excavate.config.ExcavateServerConfig;
 import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * Central registry for {@link VeinShape} instances.
- *
- * <p> Manages shape registration and server-biased filtering.
- *
- * <p><strong>Registration Lifecycle:</strong> Built-in shapes should be initialized via
- *   {@link #registerBuiltins()} during mod startup before shape lookups occur.
- *
- * @see VeinShape
- * @see ExcavateServerConfig
- * @apiNote This class is for internal use only, if you want to register new shapes go through {@link ExcavateAPI}
- *
- */
 public final class VeinShapeRegistry {
-
 
     private static final List<VeinShape> SHAPES = new ArrayList<>();
     private static final int SHAPELESS_LATERAL_LIMIT = 2;
@@ -110,7 +95,6 @@ public final class VeinShapeRegistry {
         return out;
     }
 
-
     private static String path(String id) {
         int i = id.indexOf(':');
         return i < 0 ? id : id.substring(i + 1);
@@ -157,10 +141,6 @@ public final class VeinShapeRegistry {
         return out;
     }
 
-    // This runs once per BFS-visited block while vein-mining (up to hundreds of times per single
-    // vein), so it's a hot path - a Stream pipeline here (each call allocating a Stream, its
-    // Spliterator, and boxed lambdas for what's fundamentally a fixed 6- or 26-element loop) was
-    // producing enough short-lived garbage per vein to cause visible GC stutters while mining.
     private static List<BlockPos> allOffsetPositions(BlockPos pos, boolean diagonals) {
         if (!diagonals) {
             List<BlockPos> out = new ArrayList<>(FACE_OFFSETS.length);
