@@ -45,9 +45,21 @@ public final class VeinShapeRegistry {
 
     private static List<BlockPos> getLayerPositions(BlockPos pos, BlockPos origin, Direction facing,
                                                     boolean diagonals) {
-        List<BlockPos> all = allOffsetPositions(pos, diagonals);
-        List<BlockPos> out = new ArrayList<>(all.size());
-        for (BlockPos p : all) if (p.getY() == origin.getY()) out.add(p);
+        // Only the neighbours on the origin's Y level are ever kept, so build just those (4 or 8)
+        // instead of all 6/26 and filtering most of them away.
+        int y = origin.getY();
+        int px = pos.getX(), pz = pos.getZ();
+        if (!diagonals) {
+            return List.of(new BlockPos(px + 1, y, pz), new BlockPos(px - 1, y, pz),
+                    new BlockPos(px, y, pz + 1), new BlockPos(px, y, pz - 1));
+        }
+        List<BlockPos> out = new ArrayList<>(8);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) continue;
+                out.add(new BlockPos(px + dx, y, pz + dz));
+            }
+        }
         return out;
     }
 
