@@ -26,6 +26,8 @@ public class ExcavateServerConfig {
     public static final ForgeConfigSpec.BooleanValue LOCK_MAX_VEIN_SIZE;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> DISABLED_SHAPES;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> DISABLED_MATCH_MODES;
+    public static final ForgeConfigSpec.BooleanValue HARVEST_REPLANTS;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> USE_EXTRA_ITEMS;
 
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> ORE_LIST_DEFAULTS;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> ANY_LIST_DEFAULTS;
@@ -94,6 +96,16 @@ public class ExcavateServerConfig {
         DISABLED_MATCH_MODES = builder
                 .comment("Match-mode ids players may not select at all (e.g. \"match_any\"). Built-ins: exact, match_ore, match_any.")
                 .defineList("disabledMatchModes", new ArrayList<>(), o -> o instanceof String);
+
+        HARVEST_REPLANTS = builder
+                .comment("If true, vein-harvesting replants every crop it harvests (using one seed from the " +
+                        "drops where the crop gives one back). If false, harvested crops are removed.")
+                .define("harvestReplants", true);
+
+        USE_EXTRA_ITEMS = builder
+                .comment("Extra item ids that vein tool-use may repeat across a vein, on top of the built-in " +
+                        "tools (axes, hoes, shovels, pickaxes, shears, honeycomb). Example: \"minecraft:brush\".")
+                .defineList("useExtraItems", new ArrayList<>(), o -> o instanceof String);
 
         builder.pop();
         builder.push("matchLists");

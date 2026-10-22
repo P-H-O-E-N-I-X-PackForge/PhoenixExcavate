@@ -3,14 +3,11 @@ package net.phoenixvine.excavate.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.common.Mod;
 import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.api.VeinShape;
 import net.phoenixvine.excavate.vein.VeinMode;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
 
-@Mod.EventBusSubscriber(modid = PhoenixExcavate.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class ExcavateHud {
 
     private static final long FADE_MS = 1400;
@@ -26,7 +23,7 @@ public final class ExcavateHud {
     }
 
     public static void showModeToast(VeinMode mode) {
-        label = "§7Vein Mode: §f" + (mode == VeinMode.PLACE ? "Place" : "Mine");
+        label = "§7Vein Mode: §f" + mode.label();
         shownAtMs = System.currentTimeMillis();
     }
 

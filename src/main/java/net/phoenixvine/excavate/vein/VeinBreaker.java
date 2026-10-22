@@ -90,7 +90,12 @@ public class VeinBreaker {
         }
 
         VeinServerState.Active active = VeinServerState.active(player.getUUID());
-        if (active == null || active.mode() != VeinMode.MINE) return;
+        if (active == null) return;
+        if (VeinActions.onBreak(player, level, event.getPos(), active)) {
+            event.setCanceled(true);
+            return;
+        }
+        if (active.mode() != VeinMode.MINE) return;
 
         ItemStack heldTool = player.getMainHandItem();
 

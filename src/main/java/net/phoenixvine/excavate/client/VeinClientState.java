@@ -53,7 +53,7 @@ public final class VeinClientState {
     }
 
     public static void toggleMode() {
-        mode = mode == VeinMode.MINE ? VeinMode.PLACE : VeinMode.MINE;
+        mode = mode.next();
         ExcavateSettings settings = ExcavateSettings.get();
         settings.setVeinMode(mode.name());
         settings.save();

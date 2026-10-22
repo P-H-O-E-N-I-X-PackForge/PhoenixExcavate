@@ -2,6 +2,7 @@
   "key.categories.phoenix_excavate": "Phoenix Ultimine",
   "key.phoenix_excavate.activate": "Activate Vein Mine",
   "key.phoenix_excavate.open_settings": "Open Ultimine Settings",
+  "key.phoenix_excavate.cycle_mode": "Cycle Vein Mode (Mine / Place / Replace)",
 
   "phoenix_excavate.shape.blob": "Blob",
   "phoenix_excavate.shape.tunnel": "Tunnel",

@@ -14,6 +14,7 @@ import net.phoenixvine.excavate.config.ExcavateSettings;
 public class ExcavateInputHandler {
 
     private static boolean prevActivateDown = false;
+    private static boolean prevModifierDown = false;
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -35,9 +36,17 @@ public class ExcavateInputHandler {
         boolean justPressed = activateDownNow && !prevActivateDown;
         prevActivateDown = activateDownNow;
 
-        if (justPressed && Screen.hasControlDown()) {
+        // the mode change is Ctrl or Alt together with the vein key, pressed in either order
+        boolean modifierDown = Screen.hasControlDown() || Screen.hasAltDown();
+        boolean modifierJustPressed = modifierDown && !prevModifierDown;
+        prevModifierDown = modifierDown;
+
+        boolean cycleKey = false;
+        while (ExcavateKeyBindings.CYCLE_MODE.consumeClick()) cycleKey = true;
+
+        if (cycleKey || (justPressed && modifierDown) || (activateDownNow && modifierJustPressed)) {
             VeinClientState.toggleMode();
-            while (ExcavateKeyBindings.ACTIVATE.consumeClick()) {} 
+            while (ExcavateKeyBindings.ACTIVATE.consumeClick()) {}
             return;
         }
 

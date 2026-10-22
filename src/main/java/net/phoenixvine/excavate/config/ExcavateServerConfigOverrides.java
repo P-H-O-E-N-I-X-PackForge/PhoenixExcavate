@@ -1,7 +1,9 @@
 package net.phoenixvine.excavate.config;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.electronwill.nightconfig.toml.TomlFormat;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -106,21 +108,12 @@ public final class ExcavateServerConfigOverrides {
             Path parent = path.getParent();
             if (parent != null) Files.createDirectories(parent);
 
-            CommentedFileConfig generated = CommentedFileConfig.of(path);
-            try {
-                UnmodifiableConfig specRoot = ExcavateServerConfig.SPEC.getSpec();
-                writeDefaults(ExcavateServerConfig.SPEC.getValues(), specRoot, new ArrayList<>(), generated);
-                generated.save();
-            } finally {
-                try {
-                    generated.close();
-                } catch (Exception ignored) {
-                    
-                }
-            }
+            CommentedConfig generated = CommentedConfig.inMemory();
+            UnmodifiableConfig specRoot = ExcavateServerConfig.SPEC.getSpec();
+            writeDefaults(ExcavateServerConfig.SPEC.getValues(), specRoot, new ArrayList<>(), generated);
 
-            String body = Files.readString(path, StandardCharsets.UTF_8);
-            Files.writeString(path, HEADER_COMMENT + "\n\n" + body, StandardCharsets.UTF_8);
+            String body = TomlFormat.instance().createWriter().writeToString(generated);
+            Files.writeString(path, commentOut(HEADER_COMMENT) + "\n\n" + body, StandardCharsets.UTF_8);
 
             PhoenixExcavate.LOGGER.info("[{}] Generated default {} - edit a value there and save to make it an active override.",
                     PhoenixExcavate.MOD_ID, OVERRIDES_FILE_NAME);
@@ -130,8 +123,12 @@ public final class ExcavateServerConfigOverrides {
         }
     }
 
+    private static String commentOut(String text) {
+        return text.lines().map(line -> "#" + line).collect(Collectors.joining("\n"));
+    }
+
     private static void writeDefaults(UnmodifiableConfig valuesNode, UnmodifiableConfig specRoot,
-                                       List<String> path, CommentedFileConfig target) {
+                                       List<String> path, CommentedConfig target) {
         for (Map.Entry<String, Object> entry : valuesNode.valueMap().entrySet()) {
             List<String> childPath = new ArrayList<>(path);
             childPath.add(entry.getKey());

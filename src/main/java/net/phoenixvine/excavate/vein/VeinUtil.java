@@ -5,6 +5,13 @@ import net.phoenixvine.excavate.api.VeinShape;
 import net.phoenixvine.excavate.config.ExcavateServerConfig;
 
 public class VeinUtil {
+
+    public static boolean isUnbreakable(net.minecraft.world.level.BlockGetter level,
+                                        net.minecraft.core.BlockPos pos,
+                                        net.minecraft.world.level.block.state.BlockState state) {
+        return VeinFinder.isUnbreakable(level, pos, state);
+    }
+
     public record ActiveConfig(VeinShape shape, MatchMode matchMode) {}
 
     public static ActiveConfig getValidatedConfig(VeinServerState.Active active) {

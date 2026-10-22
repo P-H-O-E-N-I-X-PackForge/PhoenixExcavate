@@ -16,6 +16,7 @@ import net.phoenixvine.excavate.config.ExcavateSettings;
 import net.minecraftforge.fml.config.ModConfig;
 import net.phoenixvine.excavate.network.ExcavateNetwork;
 import net.phoenixvine.excavate.vein.MatchModeRegistry;
+import net.phoenixvine.excavate.vein.VeinActions;
 import net.phoenixvine.excavate.vein.VeinShapeRegistry;
 
 import org.apache.logging.log4j.LogManager;
@@ -48,6 +49,7 @@ public class PhoenixExcavate {
             MatchListConfig.load();
             MatchModeRegistry.registerBuiltins();
             VeinShapeRegistry.registerBuiltins();
+            VeinActions.registerBuiltins();
         });
     }
 
