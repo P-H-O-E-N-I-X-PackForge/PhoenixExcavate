@@ -13,12 +13,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.api.ExcavateAPI;
 import net.phoenixvine.excavate.api.MatchMode;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
+@EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
 public class VeinBreaker {
 
     private static final ThreadLocal<Boolean> PROCESSING = ThreadLocal.withInitial(() -> false);
@@ -131,7 +132,7 @@ public class VeinBreaker {
         List<BlockPos> extras = new ArrayList<>(vein.subList(1, vein.size()));
 
         VeinMineEvent.Pre pre = new VeinMineEvent.Pre(player, origin, extras);
-        MinecraftForge.EVENT_BUS.post(pre);
+        NeoForge.EVENT_BUS.post(pre);
         if (pre.isCanceled() || pre.getCandidates().isEmpty()) return;
 
         BlockState originState = level.getBlockState(origin);
@@ -143,8 +144,8 @@ public class VeinBreaker {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || JOBS.isEmpty()) return;
+    public static void onServerTick(ServerTickEvent.Post event) {
+        if (JOBS.isEmpty()) return;
 
         try {
             PROCESSING.set(true);
@@ -175,7 +176,7 @@ public class VeinBreaker {
             if (job.remaining.isEmpty()) {
                 queue.poll();
                 if (job.broken > 0) {
-                    MinecraftForge.EVENT_BUS.post(new VeinMineEvent.Post(player, job.origin, job.broken));
+                    NeoForge.EVENT_BUS.post(new VeinMineEvent.Post(player, job.origin, job.broken));
                 }
             }
 
@@ -209,7 +210,7 @@ public class VeinBreaker {
             if (!ClaimProtectionCompat.canBreak(player, pos)) continue;
 
             BlockEvent.BreakEvent extraEvent = new BlockEvent.BreakEvent(level, pos, state, player);
-            MinecraftForge.EVENT_BUS.post(extraEvent);
+            NeoForge.EVENT_BUS.post(extraEvent);
             if (extraEvent.isCanceled()) continue;
 
             BlockEntity be = level.getBlockEntity(pos);

@@ -2,8 +2,8 @@ package net.phoenixvine.excavate.api.event;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.eventbus.api.Cancelable;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.ICancellableEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +26,7 @@ public abstract class VeinMineEvent extends Event {
         return origin;
     }
 
-    @Cancelable
-    public static class Pre extends VeinMineEvent {
+    public static class Pre extends VeinMineEvent implements ICancellableEvent {
 
         private final List<BlockPos> candidates;
 

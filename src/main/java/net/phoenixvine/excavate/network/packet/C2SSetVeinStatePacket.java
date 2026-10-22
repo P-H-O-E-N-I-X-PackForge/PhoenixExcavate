@@ -1,15 +1,21 @@
 package net.phoenixvine.excavate.network.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.vein.VeinMode;
 import net.phoenixvine.excavate.vein.VeinServerState;
 
-import java.util.function.Supplier;
+public class C2SSetVeinStatePacket implements CustomPacketPayload {
 
-public class C2SSetVeinStatePacket {
+    public static final Type<C2SSetVeinStatePacket> TYPE = new Type<>(PhoenixExcavate.id("set_vein_state"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, C2SSetVeinStatePacket> STREAM_CODEC = StreamCodec
+            .of((buf, packet) -> packet.encode(buf), C2SSetVeinStatePacket::new);
 
     private final boolean active;
     private final ResourceLocation shapeId;
@@ -37,13 +43,14 @@ public class C2SSetVeinStatePacket {
         buf.writeEnum(mode);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
-            if (player == null) return;
-            VeinServerState.setActive(player.getUUID(), active ? shapeId : null,
-                    ResourceLocation.parse(matchModeId), mode);
-        });
-        ctx.get().setPacketHandled(true);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public static void handle(C2SSetVeinStatePacket packet, IPayloadContext ctx) {
+        if (!(ctx.player() instanceof ServerPlayer player)) return;
+        VeinServerState.setActive(player.getUUID(), packet.active ? packet.shapeId : null,
+                ResourceLocation.parse(packet.matchModeId), packet.mode);
     }
 }

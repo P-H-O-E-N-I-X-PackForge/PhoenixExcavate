@@ -70,8 +70,8 @@ public final class VeinClientState {
     }
 
     private static void sync() {
-        if (ExcavateNetwork.CHANNEL != null) {
-            ExcavateNetwork.CHANNEL.sendToServer(
+        {
+            ExcavateNetwork.sendToServer(
                     new C2SSetVeinStatePacket(active, shapeId, ExcavateSettings.get().getMatchModeId(), mode));
         }
     }

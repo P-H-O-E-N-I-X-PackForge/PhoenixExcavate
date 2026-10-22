@@ -1,13 +1,16 @@
 package net.phoenixvine.excavate.config;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.fml.loading.FMLPaths;
+import com.electronwill.nightconfig.toml.TomlFormat;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.fml.loading.FMLPaths;
 import net.phoenixvine.excavate.PhoenixExcavate;
 
 import java.lang.reflect.Field;
@@ -21,7 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Mod.EventBusSubscriber(modid = PhoenixExcavate.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
 public final class ExcavateServerConfigOverrides {
 
     public static final String OVERRIDES_FILE_NAME = "phoenix_excavate-server-overrides.toml";
@@ -81,11 +84,11 @@ public final class ExcavateServerConfigOverrides {
 
         if (flattened.isEmpty()) return;
 
-        Map<String, ForgeConfigSpec.ConfigValue<?>> byPath = mapConfigValues();
+        Map<String, ModConfigSpec.ConfigValue<?>> byPath = mapConfigValues();
 
         for (Map.Entry<String, Object> entry : flattened.entrySet()) {
             String path = entry.getKey();
-            ForgeConfigSpec.ConfigValue<?> configValue = byPath.get(path);
+            ModConfigSpec.ConfigValue<?> configValue = byPath.get(path);
             if (configValue == null) {
                 PhoenixExcavate.LOGGER.warn("[{}] {} sets unknown config key '{}' - ignoring it. Check for a typo " +
                         "against the generated per-world serverconfig/phoenix_excavate-server.toml.",
@@ -106,21 +109,12 @@ public final class ExcavateServerConfigOverrides {
             Path parent = path.getParent();
             if (parent != null) Files.createDirectories(parent);
 
-            CommentedFileConfig generated = CommentedFileConfig.of(path);
-            try {
-                UnmodifiableConfig specRoot = ExcavateServerConfig.SPEC.getSpec();
-                writeDefaults(ExcavateServerConfig.SPEC.getValues(), specRoot, new ArrayList<>(), generated);
-                generated.save();
-            } finally {
-                try {
-                    generated.close();
-                } catch (Exception ignored) {
-                    
-                }
-            }
+            CommentedConfig generated = CommentedConfig.inMemory();
+            UnmodifiableConfig specRoot = ExcavateServerConfig.SPEC.getSpec();
+            writeDefaults(ExcavateServerConfig.SPEC.getValues(), specRoot, new ArrayList<>(), generated);
 
-            String body = Files.readString(path, StandardCharsets.UTF_8);
-            Files.writeString(path, HEADER_COMMENT + "\n\n" + body, StandardCharsets.UTF_8);
+            String body = TomlFormat.instance().createWriter().writeToString(generated);
+            Files.writeString(path, commentOut(HEADER_COMMENT) + "\n\n" + body, StandardCharsets.UTF_8);
 
             PhoenixExcavate.LOGGER.info("[{}] Generated default {} - edit a value there and save to make it an active override.",
                     PhoenixExcavate.MOD_ID, OVERRIDES_FILE_NAME);
@@ -130,17 +124,21 @@ public final class ExcavateServerConfigOverrides {
         }
     }
 
+    private static String commentOut(String text) {
+        return text.lines().map(line -> "#" + line).collect(Collectors.joining("\n"));
+    }
+
     private static void writeDefaults(UnmodifiableConfig valuesNode, UnmodifiableConfig specRoot,
-                                       List<String> path, CommentedFileConfig target) {
+                                       List<String> path, CommentedConfig target) {
         for (Map.Entry<String, Object> entry : valuesNode.valueMap().entrySet()) {
             List<String> childPath = new ArrayList<>(path);
             childPath.add(entry.getKey());
             Object value = entry.getValue();
 
-            if (value instanceof ForgeConfigSpec.ConfigValue<?> configValue) {
+            if (value instanceof ModConfigSpec.ConfigValue<?> configValue) {
                 target.set(childPath, configValue.getDefault());
                 Object specEntry = specRoot.get(childPath);
-                if (specEntry instanceof ForgeConfigSpec.ValueSpec valueSpec && valueSpec.getComment() != null) {
+                if (specEntry instanceof ModConfigSpec.ValueSpec valueSpec && valueSpec.getComment() != null) {
                     target.setComment(childPath, valueSpec.getComment());
                 }
             } else if (value instanceof UnmodifiableConfig nested) {
@@ -161,14 +159,14 @@ public final class ExcavateServerConfigOverrides {
         }
     }
 
-    private static Map<String, ForgeConfigSpec.ConfigValue<?>> mapConfigValues() {
-        Map<String, ForgeConfigSpec.ConfigValue<?>> map = new HashMap<>();
+    private static Map<String, ModConfigSpec.ConfigValue<?>> mapConfigValues() {
+        Map<String, ModConfigSpec.ConfigValue<?>> map = new HashMap<>();
         for (Field field : ExcavateServerConfig.class.getDeclaredFields()) {
-            if (!ForgeConfigSpec.ConfigValue.class.isAssignableFrom(field.getType())) continue;
+            if (!ModConfigSpec.ConfigValue.class.isAssignableFrom(field.getType())) continue;
             try {
                 field.setAccessible(true);
                 Object value = field.get(null);
-                if (value instanceof ForgeConfigSpec.ConfigValue<?> configValue) {
+                if (value instanceof ModConfigSpec.ConfigValue<?> configValue) {
                     map.put(String.join(".", configValue.getPath()), configValue);
                 }
             } catch (ReflectiveOperationException ignored) {
@@ -178,7 +176,7 @@ public final class ExcavateServerConfigOverrides {
         return map;
     }
 
-    private static void applyOverride(ForgeConfigSpec.ConfigValue<?> configValue, Object rawValue, String path) throws ReflectiveOperationException {
+    private static void applyOverride(ModConfigSpec.ConfigValue<?> configValue, Object rawValue, String path) throws ReflectiveOperationException {
         Object converted = convert(configValue, rawValue, path);
         if (converted == null) return; 
 
@@ -188,23 +186,23 @@ public final class ExcavateServerConfigOverrides {
         cachedValueField().set(configValue, converted);
     }
 
-    private static Object convert(ForgeConfigSpec.ConfigValue<?> configValue, Object rawValue, String path) {
-        if (configValue instanceof ForgeConfigSpec.BooleanValue) {
+    private static Object convert(ModConfigSpec.ConfigValue<?> configValue, Object rawValue, String path) {
+        if (configValue instanceof ModConfigSpec.BooleanValue) {
             if (rawValue instanceof Boolean b) return b;
             warnTypeMismatch(path, "a boolean", rawValue);
             return null;
         }
-        if (configValue instanceof ForgeConfigSpec.IntValue) {
+        if (configValue instanceof ModConfigSpec.IntValue) {
             if (rawValue instanceof Number n) return n.intValue();
             warnTypeMismatch(path, "an integer", rawValue);
             return null;
         }
-        if (configValue instanceof ForgeConfigSpec.LongValue) {
+        if (configValue instanceof ModConfigSpec.LongValue) {
             if (rawValue instanceof Number n) return n.longValue();
             warnTypeMismatch(path, "a long", rawValue);
             return null;
         }
-        if (configValue instanceof ForgeConfigSpec.DoubleValue) {
+        if (configValue instanceof ModConfigSpec.DoubleValue) {
             if (rawValue instanceof Number n) return n.doubleValue();
             warnTypeMismatch(path, "a double", rawValue);
             return null;
@@ -224,7 +222,7 @@ public final class ExcavateServerConfigOverrides {
 
     private static Field cachedValueField() throws NoSuchFieldException {
         if (cachedValueField == null) {
-            Field f = ForgeConfigSpec.ConfigValue.class.getDeclaredField("cachedValue");
+            Field f = ModConfigSpec.ConfigValue.class.getDeclaredField("cachedValue");
             f.setAccessible(true);
             cachedValueField = f;
         }

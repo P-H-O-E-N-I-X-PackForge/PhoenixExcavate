@@ -2,10 +2,7 @@ package net.phoenixvine.excavate.config;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import net.phoenixvine.excavate.PhoenixExcavate;
 
 import java.util.ArrayList;
@@ -13,32 +10,32 @@ import java.util.List;
 
 public class ExcavateServerConfig {
 
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.BooleanValue LOCK_RESPECT_DURABILITY;
-    public static final ForgeConfigSpec.BooleanValue LOCK_RESPECT_HUNGER;
-    public static final ForgeConfigSpec.BooleanValue LOCK_RESPECT_ENCHANTMENTS;
-    public static final ForgeConfigSpec.BooleanValue LOCK_COLLECT_TO_PLAYER;
-    public static final ForgeConfigSpec.BooleanValue LOCK_TOOL_TIER;
-    public static final ForgeConfigSpec.BooleanValue LOCK_PLACE_CONSUMES_INVENTORY;
-    public static final ForgeConfigSpec.BooleanValue LOCK_PLACE_REPLACES_MATCHING;
-    public static final ForgeConfigSpec.IntValue MAX_VEIN_SIZE_CAP;
-    public static final ForgeConfigSpec.BooleanValue LOCK_MAX_VEIN_SIZE;
-    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> DISABLED_SHAPES;
-    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> DISABLED_MATCH_MODES;
+    public static final ModConfigSpec.BooleanValue LOCK_RESPECT_DURABILITY;
+    public static final ModConfigSpec.BooleanValue LOCK_RESPECT_HUNGER;
+    public static final ModConfigSpec.BooleanValue LOCK_RESPECT_ENCHANTMENTS;
+    public static final ModConfigSpec.BooleanValue LOCK_COLLECT_TO_PLAYER;
+    public static final ModConfigSpec.BooleanValue LOCK_TOOL_TIER;
+    public static final ModConfigSpec.BooleanValue LOCK_PLACE_CONSUMES_INVENTORY;
+    public static final ModConfigSpec.BooleanValue LOCK_PLACE_REPLACES_MATCHING;
+    public static final ModConfigSpec.IntValue MAX_VEIN_SIZE_CAP;
+    public static final ModConfigSpec.BooleanValue LOCK_MAX_VEIN_SIZE;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> DISABLED_SHAPES;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> DISABLED_MATCH_MODES;
 
-    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> ORE_LIST_DEFAULTS;
-    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> ANY_LIST_DEFAULTS;
-    public static final ForgeConfigSpec.BooleanValue LOCK_ORE_LIST;
-    public static final ForgeConfigSpec.BooleanValue LOCK_ANY_LIST;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> ORE_LIST_DEFAULTS;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> ANY_LIST_DEFAULTS;
+    public static final ModConfigSpec.BooleanValue LOCK_ORE_LIST;
+    public static final ModConfigSpec.BooleanValue LOCK_ANY_LIST;
 
-    public static final ForgeConfigSpec.IntValue VEIN_BLOCKS_PER_TICK;
-    public static final ForgeConfigSpec.IntValue VEIN_TRIGGER_DEBOUNCE_TICKS;
+    public static final ModConfigSpec.IntValue VEIN_BLOCKS_PER_TICK;
+    public static final ModConfigSpec.IntValue VEIN_TRIGGER_DEBOUNCE_TICKS;
 
-    public static final ForgeConfigSpec.ConfigValue<String> REQUIRED_ENCHANTMENT;
+    public static final ModConfigSpec.ConfigValue<String> REQUIRED_ENCHANTMENT;
 
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         builder.push("policy");
 
         LOCK_RESPECT_DURABILITY = builder
@@ -101,8 +98,8 @@ public class ExcavateServerConfig {
         ORE_LIST_DEFAULTS = builder
                 .comment("Default entries for the first (\"ore\") match list. Both its initial contents on first " +
                         "launch and what the in-game Reset button restores it to. Each entry is \"TAG:<id>\" or " +
-                        "\"BLOCK:<id>\" (e.g. \"TAG:forge:ores/iron\"). Uses Forge's common ore tag convention " +
-                        "(forge:ores/<name>) rather than vanilla's per-variant-family tags, so modded ores that " +
+                        "\"BLOCK:<id>\" (e.g. \"TAG:c:ores/iron\"). Uses the common ore tag convention " +
+                        "(c:ores/<name>) rather than vanilla's per-variant-family tags, so modded ores that " +
                         "register into the Forge common tags are recognized too. Repoint this at anything you " +
                         "like. It doesn't have to actually be ores.")
                 .defineList("oreListDefaults", defaultOreEntries(), o -> o instanceof String);
@@ -184,8 +181,10 @@ public class ExcavateServerConfig {
             return true;
         }
 
-        Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(rl);
-        if (enchantment == null) {
+        for (var holder : tool.getEnchantments().keySet()) {
+            if (holder.is(rl)) return true;
+        }
+        if (!knownEnchantment(rl)) {
             if (!warnedUnknownEnchant) {
                 warnedUnknownEnchant = true;
                 PhoenixExcavate.LOGGER.warn(
@@ -195,24 +194,30 @@ public class ExcavateServerConfig {
             }
             return true;
         }
+        return false;
+    }
 
-        return EnchantmentHelper.getItemEnchantmentLevel(enchantment, tool) > 0;
+    private static boolean knownEnchantment(ResourceLocation rl) {
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return true;
+        return server.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .containsKey(rl);
     }
 
     private static List<String> defaultOreEntries() {
         List<String> defaults = new ArrayList<>();
 
-        defaults.add("TAG:forge:ores");
-        defaults.add("TAG:forge:ores/coal");
-        defaults.add("TAG:forge:ores/iron");
-        defaults.add("TAG:forge:ores/copper");
-        defaults.add("TAG:forge:ores/gold");
-        defaults.add("TAG:forge:ores/redstone");
-        defaults.add("TAG:forge:ores/lapis");
-        defaults.add("TAG:forge:ores/diamond");
-        defaults.add("TAG:forge:ores/emerald");
-        defaults.add("TAG:forge:ores/quartz");
-        defaults.add("TAG:forge:ores/netherite_scrap");
+        defaults.add("TAG:c:ores");
+        defaults.add("TAG:c:ores/coal");
+        defaults.add("TAG:c:ores/iron");
+        defaults.add("TAG:c:ores/copper");
+        defaults.add("TAG:c:ores/gold");
+        defaults.add("TAG:c:ores/redstone");
+        defaults.add("TAG:c:ores/lapis");
+        defaults.add("TAG:c:ores/diamond");
+        defaults.add("TAG:c:ores/emerald");
+        defaults.add("TAG:c:ores/quartz");
+        defaults.add("TAG:c:ores/netherite_scrap");
         return defaults;
     }
 

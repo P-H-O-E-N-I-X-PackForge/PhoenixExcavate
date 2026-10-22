@@ -1,32 +1,21 @@
 package net.phoenixvine.excavate.network;
 
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.phoenixvine.excavate.network.packet.C2SSetVeinStatePacket;
-
-import java.util.Optional;
 
 public class ExcavateNetwork {
 
     private static final String PROTOCOL = "1";
 
-    public static SimpleChannel CHANNEL;
-    private static int id = 0;
+    public static void register(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(PROTOCOL);
+        registrar.playToServer(C2SSetVeinStatePacket.TYPE, C2SSetVeinStatePacket.STREAM_CODEC,
+                C2SSetVeinStatePacket::handle);
+    }
 
-    public static void init() {
-        CHANNEL = NetworkRegistry.newSimpleChannel(
-                new ResourceLocation("phoenix_excavate", "main"),
-                () -> PROTOCOL,
-                PROTOCOL::equals,
-                PROTOCOL::equals);
-
-        CHANNEL.registerMessage(id++,
-                C2SSetVeinStatePacket.class,
-                C2SSetVeinStatePacket::encode,
-                C2SSetVeinStatePacket::new,
-                C2SSetVeinStatePacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+    public static void sendToServer(C2SSetVeinStatePacket packet) {
+        PacketDistributor.sendToServer(packet);
     }
 }

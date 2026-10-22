@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class MatchEntry {
 
@@ -30,8 +30,8 @@ public class MatchEntry {
         if (rl == null) return false;
 
         if (type == Type.BLOCK) {
-            if (!ForgeRegistries.BLOCKS.containsKey(rl)) return false;
-            return ForgeRegistries.BLOCKS.getValue(rl) == state.getBlock();
+            if (!BuiltInRegistries.BLOCK.containsKey(rl)) return false;
+            return BuiltInRegistries.BLOCK.get(rl) == state.getBlock();
         }
 
         TagKey<Block> tag = TagKey.create(Registries.BLOCK, rl);

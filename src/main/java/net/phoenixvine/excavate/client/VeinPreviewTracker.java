@@ -5,10 +5,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.api.MatchMode;
@@ -20,7 +21,7 @@ import net.phoenixvine.excavate.vein.VeinFinder;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = PhoenixExcavate.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = PhoenixExcavate.MOD_ID, value = Dist.CLIENT)
 public class VeinPreviewTracker {
 
     private static List<BlockPos> preview = List.of();
@@ -35,8 +36,7 @@ public class VeinPreviewTracker {
     }
 
     @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    public static void onRenderTick(RenderFrameEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         boolean active = VeinClientState.isActive();
 

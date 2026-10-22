@@ -459,13 +459,13 @@ public class ExcavateConfigScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rawMx, double rawMy, double delta) {
+    public boolean mouseScrolled(double rawMx, double rawMy, double scrollX, double scrollY) {
         double mx = rawMx / uiScale;
         double my = rawMy / uiScale;
         if (mx >= listX && mx < listX + listW && my >= listY && my < listY + listH) {
             return true;
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, scrollX, scrollY);
     }
 
     private void cycleTheme() {

@@ -2,7 +2,7 @@ package net.phoenixvine.excavate.compat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public final class PhoenixDomainsCompat {
 

@@ -7,7 +7,7 @@ import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.List;
 
@@ -21,9 +21,9 @@ public final class BlockFamily {
             BlockTags.STONE_ORE_REPLACEABLES,
             BlockTags.DEEPSLATE_ORE_REPLACEABLES,
             BlockTags.STONE_BRICKS,
-            Tags.Blocks.STONE,
-            Tags.Blocks.COBBLESTONE,
-            Tags.Blocks.NETHERRACK
+            Tags.Blocks.STONES,
+            Tags.Blocks.COBBLESTONES,
+            Tags.Blocks.NETHERRACKS
     );
 
     private static final List<TagKey<Block>> OTHER_FAMILY_TAGS = List.of(

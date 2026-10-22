@@ -16,14 +16,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.BlockSnapshot;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.api.ExcavateAPI;
 import net.phoenixvine.excavate.api.MatchMode;
@@ -33,7 +34,7 @@ import net.phoenixvine.excavate.config.ExcavateServerConfig;
 
 import java.util.*;
 
-@Mod.EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
+@EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
 public class VeinPlacer {
 
     private static final class Job {
@@ -127,8 +128,7 @@ public class VeinPlacer {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    public static void onServerTick(ServerTickEvent.Post event) {
         if (JOBS.isEmpty()) return;
         drainJobs();
     }
@@ -193,7 +193,7 @@ public class VeinPlacer {
 
             BlockSnapshot snapshot = BlockSnapshot.create(level.dimension(), level, pos);
             BlockEvent.EntityPlaceEvent placeEvent = new BlockEvent.EntityPlaceEvent(snapshot, existing, player);
-            MinecraftForge.EVENT_BUS.post(placeEvent);
+            NeoForge.EVENT_BUS.post(placeEvent);
             if (placeEvent.isCanceled()) continue;
 
             if (replacingSolid) {
