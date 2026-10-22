@@ -139,6 +139,8 @@ public final class VeinActions {
             if (job == null) return true;
 
             ServerPlayer player = server == null ? null : server.getPlayerList().getPlayer(entry.getKey());
+            // fake players (other mods, tests) are not in the player list, but are fine to keep working for
+            if (player == null && !job.context.player().isRemoved()) player = job.context.player();
             if (player == null || !(player.level() instanceof ServerLevel level)) {
                 queue.clear();
                 return true;
