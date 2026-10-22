@@ -30,11 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Runs the registered {@link VeinAction}s. A break or a right-click with vein actions active is offered to each action
- * for its trigger; the first that applies finds the vein, handles the clicked block (if it includes it) at once, and
- * queues the rest to be done a few blocks per tick, like vein mining and placing.
- */
 @EventBusSubscriber(modid = PhoenixExcavate.MOD_ID)
 public final class VeinActions {
 
@@ -62,7 +57,6 @@ public final class VeinActions {
         ExcavateAPI.registerAction(new PlantAction());
     }
 
-    /** Offers a block break to the break actions. True if one handled it (the break should be cancelled). */
     public static boolean onBreak(ServerPlayer player, ServerLevel level, BlockPos origin,
                                   VeinServerState.Active active) {
         return run(VeinAction.Trigger.BREAK, player, level, origin, Direction.UP, active);
@@ -105,8 +99,6 @@ public final class VeinActions {
             var config = VeinUtil.getValidatedConfig(active);
             if (config == null || debounced(player, level)) return false;
 
-            // the tool-tier filter in the finder is about mining; none of these actions are mined, so it must not
-            // hide blocks because the held item (a hoe, a block, bone meal) is not a pickaxe
             ItemStack finderTool = new ItemStack(Items.NETHERITE_PICKAXE);
             List<BlockPos> vein = new ArrayList<>(VeinFinder.find(level, origin,
                     FacingUtil.facingOf(player.getLookAngle()), config.matchMode(), config.shape(), finderTool));

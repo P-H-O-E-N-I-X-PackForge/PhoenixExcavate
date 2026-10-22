@@ -20,11 +20,6 @@ public final class VeinFinder {
     private static final int WALL_DEPTH_TOLERANCE = 1;
     private static final int STAIRCASE_STEP_TOLERANCE = 1;
 
-    /**
-     * How many air blocks in a row a flat shape (layer, wall) may cross to reach more matching blocks. Matching
-     * blocks reset the count, so the shape still spreads as far as the material goes and hops small gaps (a
-     * tunnel, a hole), but it can no longer flood an open cave or the surface until the explore budget runs out.
-     */
     private static final int FLAT_SHAPE_AIR_GAP = 3;
 
     private static int airGapLimit(VeinShape shape) {
@@ -56,8 +51,7 @@ public final class VeinFinder {
         int maxExplored = exploreBudget(cap, diagonals);
         boolean toolTierEnabled = settings.isRespectToolTier();
         boolean isShapeless = "shapeless".equals(shape.id());
-        // match_any accepts every non-ore block, so on its own it walks from cobble into logs/leaves/dirt.
-        // The family check keeps it to stone-with-stone, logs-with-logs, etc. for every shape, not just shapeless.
+
         boolean enforceFamily = isShapeless || "match_any".equals(matchMode.id().getPath());
 
         int gapLimit = airGapLimit(shape);
@@ -217,11 +211,6 @@ public final class VeinFinder {
     private static final int PLANT_RADIUS = 7;
     private static final int PLANT_HEIGHT = 3;
 
-    /**
-     * Plants do not grow touching each other - tufts of grass and flowers are scattered with gaps - so following
-     * neighbours would stop at the first gap. Instead every bonemealable plant in the area around the broken one is
-     * taken, nearest first, up to the vein size limit.
-     */
     private static List<BlockPos> findPlantsInArea(BlockGetter level, BlockPos origin, BlockState originState,
                                                    int cap) {
         List<BlockPos> found = new ArrayList<>();
@@ -255,11 +244,6 @@ public final class VeinFinder {
         return result;
     }
 
-    /**
-     * Tall plants (tall grass, large ferns, sunflowers, ...) are two blocks. Taking only one half leaves the other
-     * standing, so a half always brings its partner along, even if that goes one past the size limit. The upper half
-     * is listed first so the lower one, which holds the drops, is broken last.
-     */
     private static void addDoublePlantPartner(BlockGetter level, BlockPos pos, List<BlockPos> result,
                                               Set<BlockPos> taken, boolean isOrigin) {
         BlockState state = level.getBlockState(pos);
@@ -269,7 +253,7 @@ public final class VeinFinder {
         BlockPos partner = lower ? pos.above() : pos.below();
         BlockState partnerState = level.getBlockState(partner);
         if (partnerState.getBlock() != state.getBlock() || !taken.add(partner.immutable())) return;
-        // The origin must stay first in the list: the game breaks it itself and the rest follow.
+        
         if (lower && !isOrigin) {
             result.add(result.size() - 1, partner.immutable());
         } else {

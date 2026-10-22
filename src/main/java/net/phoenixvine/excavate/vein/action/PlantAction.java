@@ -25,10 +25,6 @@ import net.phoenixvine.excavate.api.ExcavateAPI;
 import net.phoenixvine.excavate.api.VeinAction;
 import net.phoenixvine.excavate.vein.VeinMode;
 
-/**
- * In place mode, right-clicking soil with seeds (or a sapling, or nether wart) plants every connected soil block of the
- * same kind that has room above it. Vanilla plants the clicked one.
- */
 public final class PlantAction implements VeinAction {
 
     public static final ResourceLocation ID = PhoenixExcavate.id("plant");

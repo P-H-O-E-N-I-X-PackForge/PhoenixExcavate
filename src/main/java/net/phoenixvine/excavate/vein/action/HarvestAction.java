@@ -23,7 +23,6 @@ import net.phoenixvine.excavate.vein.VeinMode;
 
 import java.util.List;
 
-/** Breaking a mature crop with vein actions on harvests every mature crop of that kind nearby and replants them. */
 public final class HarvestAction implements VeinAction {
 
     public static final ResourceLocation ID = PhoenixExcavate.id("harvest");

@@ -22,7 +22,6 @@ import net.phoenixvine.excavate.vein.VeinMode;
 
 import java.util.List;
 
-/** In replace mode, right-clicking with a block swaps the whole clicked vein for that block. */
 public final class ReplaceAction implements VeinAction {
 
     public static final ResourceLocation ID = PhoenixExcavate.id("replace");

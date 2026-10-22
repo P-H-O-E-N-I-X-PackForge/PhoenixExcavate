@@ -36,7 +36,6 @@ public class ExcavateInputHandler {
         boolean justPressed = activateDownNow && !prevActivateDown;
         prevActivateDown = activateDownNow;
 
-        // the mode change is Ctrl or Alt together with the vein key, pressed in either order
         boolean modifierDown = Screen.hasControlDown() || Screen.hasAltDown();
         boolean modifierJustPressed = modifierDown && !prevModifierDown;
         prevModifierDown = modifierDown;

@@ -22,11 +22,6 @@ import net.phoenixvine.excavate.api.VeinAction;
 import net.phoenixvine.excavate.config.ExcavateServerConfig;
 import net.phoenixvine.excavate.vein.VeinMode;
 
-/**
- * Right-clicking with a tool (or bone meal) repeats that use across the vein: tilling, stripping, scraping, paths,
- * shearing, waxing, brushing, growing crops. Each block goes through the item's own use code, so whatever the item
- * does (and whatever other mods hook into item use) applies per block.
- */
 public final class ToolUseAction implements VeinAction {
 
     public static final ResourceLocation ID = PhoenixExcavate.id("tool_use");

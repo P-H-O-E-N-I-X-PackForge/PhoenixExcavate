@@ -18,7 +18,6 @@ final class ActionUtil {
         return level.mayInteract(player, pos) && ClaimProtectionCompat.canBreak(player, pos);
     }
 
-    /** Gives drops to the player or drops them at the block, depending on the collect-to-player setting. */
     static void deliver(ServerPlayer player, ServerLevel level, BlockPos pos, List<ItemStack> drops) {
         for (ItemStack drop : drops) {
             if (drop.isEmpty()) continue;

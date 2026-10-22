@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ExcavateConfigScreen extends Screen {
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    }
 
     private static final int ROW_H = 18;
 
