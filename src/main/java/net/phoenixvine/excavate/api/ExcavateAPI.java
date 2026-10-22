@@ -51,6 +51,8 @@ public final class ExcavateAPI {
 
     public static final String FEATURE_VEIN_MINING = "vein_mining";
     public static final String FEATURE_VEIN_PLACING = "vein_placing";
+    public static final String FEATURE_VEIN_HARVEST = "vein_harvesting";
+    public static final String FEATURE_VEIN_USE = "vein_tool_use";
 
     private static final Map<String, BooleanSupplier> FEATURE_GATES = new ConcurrentHashMap<>();
     private static final Map<String, BiPredicate<Player, ItemStack>> ITEM_GATES = new ConcurrentHashMap<>();
@@ -65,6 +67,8 @@ public final class ExcavateAPI {
     static {
         KNOWN_FEATURE_IDS.add(FEATURE_VEIN_MINING);
         KNOWN_FEATURE_IDS.add(FEATURE_VEIN_PLACING);
+        KNOWN_FEATURE_IDS.add(FEATURE_VEIN_HARVEST);
+        KNOWN_FEATURE_IDS.add(FEATURE_VEIN_USE);
     }
 
     public static void registerFeatureGate(String featureId, BooleanSupplier check) {

@@ -27,7 +27,7 @@ public final class ExcavateHud {
     }
 
     public static void showModeToast(VeinMode mode) {
-        label = "§7Vein Mode: §f" + (mode == VeinMode.PLACE ? "Place" : "Mine");
+        label = "§7Vein Mode: §f" + mode.label();
         shownAtMs = System.currentTimeMillis();
     }
 
