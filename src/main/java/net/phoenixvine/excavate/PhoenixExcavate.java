@@ -14,6 +14,7 @@ import net.phoenixvine.excavate.config.ExcavateSettings;
 import net.phoenixvine.excavate.config.MatchListConfig;
 import net.phoenixvine.excavate.network.ExcavateNetwork;
 import net.phoenixvine.excavate.vein.MatchModeRegistry;
+import net.phoenixvine.excavate.vein.VeinActions;
 import net.phoenixvine.excavate.vein.VeinShapeRegistry;
 
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +44,7 @@ public class PhoenixExcavate {
             MatchListConfig.load();
             MatchModeRegistry.registerBuiltins();
             VeinShapeRegistry.registerBuiltins();
+            VeinActions.registerBuiltins();
         });
     }
 

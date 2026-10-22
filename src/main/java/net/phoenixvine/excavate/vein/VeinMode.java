@@ -3,8 +3,7 @@ package net.phoenixvine.excavate.vein;
 public enum VeinMode {
     MINE("Mine"),
     PLACE("Place"),
-    HARVEST("Harvest"),
-    USE("Use Tool");
+    REPLACE("Replace");
 
     private final String label;
 
@@ -19,9 +18,5 @@ public enum VeinMode {
     public VeinMode next() {
         VeinMode[] all = values();
         return all[(ordinal() + 1) % all.length];
-    }
-
-    public boolean triggersOnRightClick() {
-        return this != MINE;
     }
 }

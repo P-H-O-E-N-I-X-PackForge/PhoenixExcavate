@@ -43,11 +43,13 @@ public class VeinActionGameTests {
 
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         VeinServerState.setActive(player.getUUID(), ResourceLocation.parse("phoenix_excavate:blob"),
-                ResourceLocation.parse("phoenix_excavate:exact"), VeinMode.HARVEST);
+                ResourceLocation.parse("phoenix_excavate:exact"), VeinMode.MINE);
 
         BlockPos abs = helper.absolutePos(a);
-        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false);
-        NeoForge.EVENT_BUS.post(new PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, abs, hit));
+        var breakEvent = new net.neoforged.neoforge.event.level.BlockEvent.BreakEvent(helper.getLevel(), abs,
+                helper.getLevel().getBlockState(abs), player);
+        NeoForge.EVENT_BUS.post(breakEvent);
+        helper.assertTrue(breakEvent.isCanceled(), "harvesting should cancel the plain break");
 
         helper.succeedWhen(() -> {
             helper.assertBlockProperty(a, CropBlock.AGE, 0);
@@ -72,7 +74,7 @@ public class VeinActionGameTests {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.setItemInHand(InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(Items.DIAMOND_HOE));
         VeinServerState.setActive(player.getUUID(), ResourceLocation.parse("phoenix_excavate:blob"),
-                ResourceLocation.parse("phoenix_excavate:exact"), VeinMode.USE);
+                ResourceLocation.parse("phoenix_excavate:exact"), VeinMode.PLACE);
 
         BlockPos abs = helper.absolutePos(first);
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(abs).add(0, 0.5, 0), Direction.UP, abs, false);
@@ -81,6 +83,64 @@ public class VeinActionGameTests {
         helper.succeedWhen(() -> {
             helper.assertBlock(second, b -> b == Blocks.FARMLAND, "second dirt should be tilled");
             helper.assertBlock(third, b -> b == Blocks.FARMLAND, "third dirt should be tilled");
+            VeinServerState.setActive(player.getUUID(), null, null, null);
+        });
+    }
+
+    @GameTest(template = "gametest_empty", timeoutTicks = 100)
+    public static void placeSeedsPlantsAcrossFarmland(GameTestHelper helper) {
+        MatchModeRegistry.registerBuiltins();
+        VeinShapeRegistry.registerBuiltins();
+
+        BlockPos first = new BlockPos(1, 1, 1);
+        BlockPos second = new BlockPos(2, 1, 1);
+        BlockPos third = new BlockPos(3, 1, 1);
+        for (BlockPos pos : new BlockPos[] {first, second, third}) {
+            helper.setBlock(pos, Blocks.FARMLAND);
+            helper.setBlock(pos.above(3), Blocks.GLOWSTONE);
+        }
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setItemInHand(InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(Items.WHEAT_SEEDS, 16));
+        VeinServerState.setActive(player.getUUID(), ResourceLocation.parse("phoenix_excavate:blob"),
+                ResourceLocation.parse("phoenix_excavate:exact"), VeinMode.PLACE);
+
+        BlockPos abs = helper.absolutePos(first);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(abs).add(0, 0.5, 0), Direction.UP, abs, false);
+        NeoForge.EVENT_BUS.post(new PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, abs, hit));
+
+        helper.succeedWhen(() -> {
+            helper.assertBlock(second.above(), b -> b == Blocks.WHEAT, "seeds should be planted on the second farmland");
+            helper.assertBlock(third.above(), b -> b == Blocks.WHEAT, "seeds should be planted on the third farmland");
+            VeinServerState.setActive(player.getUUID(), null, null, null);
+        });
+    }
+
+    @GameTest(template = "gametest_empty", timeoutTicks = 100)
+    public static void replaceSwapsTheWholeVein(GameTestHelper helper) {
+        MatchModeRegistry.registerBuiltins();
+        VeinShapeRegistry.registerBuiltins();
+
+        BlockPos first = new BlockPos(1, 1, 1);
+        BlockPos second = new BlockPos(2, 1, 1);
+        BlockPos third = new BlockPos(3, 1, 1);
+        for (BlockPos pos : new BlockPos[] {first, second, third}) {
+            helper.setBlock(pos, Blocks.STONE);
+        }
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setItemInHand(InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(Items.OAK_PLANKS, 16));
+        VeinServerState.setActive(player.getUUID(), ResourceLocation.parse("phoenix_excavate:blob"),
+                ResourceLocation.parse("phoenix_excavate:exact"), VeinMode.REPLACE);
+
+        BlockPos abs = helper.absolutePos(first);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(abs).add(0, 0.5, 0), Direction.UP, abs, false);
+        NeoForge.EVENT_BUS.post(new PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, abs, hit));
+
+        helper.succeedWhen(() -> {
+            helper.assertBlock(first, b -> b == Blocks.OAK_PLANKS, "the clicked block should be swapped");
+            helper.assertBlock(second, b -> b == Blocks.OAK_PLANKS, "the second block should be swapped");
+            helper.assertBlock(third, b -> b == Blocks.OAK_PLANKS, "the third block should be swapped");
             VeinServerState.setActive(player.getUUID(), null, null, null);
         });
     }

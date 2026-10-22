@@ -83,6 +83,8 @@ public class VeinPlacer {
 
         ItemStack heldStack = player.getItemInHand(event.getHand());
         if (!(heldStack.getItem() instanceof BlockItem blockItem)) return;
+        // seeds and saplings clicked on top of soil are the planting action, not a fill of the air above
+        if (event.getFace() == Direction.UP && net.phoenixvine.excavate.vein.action.PlantAction.isPlantable(blockItem)) return;
 
         if (!ExcavateAPI.isFeatureEnabled(ExcavateAPI.FEATURE_VEIN_PLACING, level.dimension().location(), player,
                 heldStack)) {

@@ -23,9 +23,15 @@ public class ExcavateKeyBindings {
             com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O,
             "key.categories.phoenix_excavate");
 
+    public static final KeyMapping CYCLE_MODE = new KeyMapping(
+            "key.phoenix_excavate.cycle_mode",
+            com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN,
+            "key.categories.phoenix_excavate");
+
     @SubscribeEvent
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(ACTIVATE);
         event.register(OPEN_SETTINGS);
+        event.register(CYCLE_MODE);
     }
 }

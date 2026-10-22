@@ -53,6 +53,20 @@ public final class ExcavateAPI {
     public static final String FEATURE_VEIN_PLACING = "vein_placing";
     public static final String FEATURE_VEIN_HARVEST = "vein_harvesting";
     public static final String FEATURE_VEIN_USE = "vein_tool_use";
+    public static final String FEATURE_VEIN_REPLACE = "vein_replacing";
+    public static final String FEATURE_VEIN_PLANT = "vein_planting";
+
+    private static final List<VeinAction> ACTIONS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void registerAction(VeinAction action) {
+        ACTIONS.removeIf(existing -> existing.id().equals(action.id()));
+        ACTIONS.add(action);
+        if (action.featureId() != null) KNOWN_FEATURE_IDS.add(action.featureId());
+    }
+
+    public static List<VeinAction> getActions() {
+        return java.util.Collections.unmodifiableList(ACTIONS);
+    }
 
     private static final Map<String, BooleanSupplier> FEATURE_GATES = new ConcurrentHashMap<>();
     private static final Map<String, BiPredicate<Player, ItemStack>> ITEM_GATES = new ConcurrentHashMap<>();
@@ -69,6 +83,8 @@ public final class ExcavateAPI {
         KNOWN_FEATURE_IDS.add(FEATURE_VEIN_PLACING);
         KNOWN_FEATURE_IDS.add(FEATURE_VEIN_HARVEST);
         KNOWN_FEATURE_IDS.add(FEATURE_VEIN_USE);
+        KNOWN_FEATURE_IDS.add(FEATURE_VEIN_REPLACE);
+        KNOWN_FEATURE_IDS.add(FEATURE_VEIN_PLANT);
     }
 
     public static void registerFeatureGate(String featureId, BooleanSupplier check) {
