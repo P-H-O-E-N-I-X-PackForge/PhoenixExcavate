@@ -141,6 +141,10 @@ public final class ExcavateAPI {
     public static boolean isFeatureEnabled(String featureId, ResourceLocation dimension, Player player,
                                            ItemStack tool) {
         if (!isFeatureEnabled(featureId, dimension)) return false;
+        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer &&
+                !ExcavateGates.allowed(serverPlayer, featureId, dimension)) {
+            return false;
+        }
 
         BiPredicate<Player, ItemStack> itemGate = ITEM_GATES.get(featureId);
         return itemGate == null || itemGate.test(player, tool);
