@@ -95,7 +95,7 @@ public class ExcavateServerConfig {
                 .defineList("disabledShapes", new ArrayList<>(), o -> o instanceof String);
 
         DISABLED_MATCH_MODES = builder
-                .comment("Match-mode ids players may not select at all (e.g. \"match_any\"). Built-ins: exact, match_ore, match_any, tree.")
+                .comment("Match-mode ids players may not select at all (e.g. \"match_any\"). Built-ins: exact, match_ore, match_any.")
                 .defineList("disabledMatchModes", new ArrayList<>(), o -> o instanceof String);
 
         HARVEST_REPLANTS = builder
@@ -181,7 +181,7 @@ public class ExcavateServerConfig {
 
         MACHINE_MATCH_MODE = builder
                 .comment("Match mode id used for machine vein-mines (only matters if allowFakePlayerVeinMining is on). " +
-                        "Built-ins: exact, match_ore, match_any, tree. Still subject to the disabled-match-modes list.")
+                        "Built-ins: exact, match_ore, match_any. Still subject to the disabled-match-modes list.")
                 .define("machineMatchMode", "phoenix_excavate:exact");
 
         builder.pop();

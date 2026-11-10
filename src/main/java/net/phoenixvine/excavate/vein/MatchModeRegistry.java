@@ -41,12 +41,6 @@ public final class MatchModeRegistry {
                     return matchesAny(anyList, candidate) || !matchesAny(oreList, candidate);
                 }
         ));
-
-        MODES.add(new MatchMode(
-                ResourceLocation.fromNamespaceAndPath("phoenix_excavate", "tree"),
-                "phoenix_excavate.matchmode.tree",
-                (origin, candidate) -> TreeFinder.isLog(origin) && TreeFinder.isLog(candidate)
-        ));
     }
 
     public static void register(MatchMode mode) {
