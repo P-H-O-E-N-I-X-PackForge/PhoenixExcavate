@@ -25,13 +25,14 @@ import java.util.Set;
 /**
  * Fells the tree you broke, plus any tree whose canopy touches it.
  *
- * Step 1: flood the logs (26 neighbours, so leaning/diagonal trunks stay connected). Like GregTech's axe, this is not
- *         cut short by the vein-size cap: half a tree is worse than a big one, so a tree gets at least
- *         {@link #MIN_TREE_LIMIT} blocks.
+ * Step 1: flood the logs (26 neighbours, so leaning/diagonal trunks stay connected). The vein-size cap applies as
+ *         usual, but a tree is finished before the next one starts, so a small cap fells one tree rather than
+ *         scraps of several.
  * Step 2: walk the leaves hanging off the tree's logs and collect any log that holds up one of them (leaf distance 1).
  *         That reaches branches a flood misses and the trees whose canopies overlap this one, at a cost proportional
  *         to the canopy rather than to a search box.
- * Step 3: the result is ordered top-down, so the crown comes off first and nothing is left floating mid-fell.
+ * Step 3: each tree is ordered top-down, so the crown comes off first and nothing is left floating mid-fell;
+ *         trees follow in order of distance from the log you broke.
  *
  * A cluster only counts as a tree if some log touches foliage (leaf PERSISTENT is ignored on purpose).
  * Log clusters with no foliage (cabins, piles) are skipped, not felled.
@@ -55,8 +56,6 @@ public final class TreeFinder {
     /** Set false to fell any connected log cluster, even with no foliage (leafless dead trees, log builds). */
     private static final boolean REQUIRE_FOLIAGE = true;
 
-    /** A tree is felled whole even when the vein cap is lower than this. */
-    private static final int MIN_TREE_LIMIT = 256;
     private static final int MAX_TREES = 24;
     /** Leaves walked per tree when looking for logs of neighbouring trees, and how far from a log they may be. */
     private static final int MAX_CANOPY_LEAVES = 4096;
@@ -89,20 +88,21 @@ public final class TreeFinder {
                                       int cap, ItemStack tool, boolean respectToolTier) {
         if (!isLog(originState)) return null;
 
-        int limit = Math.max(cap, MIN_TREE_LIMIT);
+        int limit = Math.max(cap, 1);
         Set<BlockPos> claimed = new HashSet<>();
         Set<BlockPos> queuedSeeds = new HashSet<>();
         PriorityQueue<BlockPos> seeds = new PriorityQueue<>(Comparator.comparingDouble(p -> p.distSqr(origin)));
         seeds.add(origin);
         queuedSeeds.add(origin);
 
-        List<BlockPos> felled = new ArrayList<>();
+        List<BlockPos> result = new ArrayList<>();
+        result.add(origin);
         int trees = 0;
-        while (!seeds.isEmpty() && felled.size() < limit && trees < MAX_TREES) {
+        while (!seeds.isEmpty() && result.size() < limit && trees < MAX_TREES) {
             BlockPos seed = seeds.poll();
             if (claimed.contains(seed)) continue;
 
-            Tree tree = flood(level, seed, claimed, limit - felled.size(), tool, respectToolTier);
+            Tree tree = flood(level, seed, claimed, limit - result.size() + 1, tool, respectToolTier);
             if (REQUIRE_FOLIAGE && !tree.crown()) {
                 // The log you clicked isn't part of a tree (a cabin, a pile): the caller falls back to normal mining.
                 if (trees == 0) return null;
@@ -110,16 +110,17 @@ public final class TreeFinder {
             }
 
             trees++;
-            for (BlockPos pos : tree.logs()) if (!pos.equals(origin)) felled.add(pos);
-            for (BlockPos pos : tree.roots()) felled.add(pos);
-            if (felled.size() < limit) linkThroughLeaves(level, tree, claimed, queuedSeeds, seeds);
+            // Top-down within the tree, so the crown comes off first and nothing hangs mid-air while the rest falls.
+            List<BlockPos> blocks = new ArrayList<>(tree.logs().size() + tree.roots().size());
+            for (BlockPos pos : tree.logs()) if (!pos.equals(origin)) blocks.add(pos);
+            blocks.addAll(tree.roots());
+            blocks.sort(Comparator.comparingInt((BlockPos p) -> p.getY()).reversed());
+            for (BlockPos pos : blocks) {
+                if (result.size() >= limit) break;
+                result.add(pos);
+            }
+            if (result.size() < limit) linkThroughLeaves(level, tree, claimed, queuedSeeds, seeds);
         }
-
-        // Top-down, so the crown comes off first and nothing hangs in mid-air while the rest is felled.
-        felled.sort(Comparator.comparingInt((BlockPos p) -> p.getY()).reversed());
-        List<BlockPos> result = new ArrayList<>(felled.size() + 1);
-        result.add(origin);
-        result.addAll(felled);
         return result;
     }
 

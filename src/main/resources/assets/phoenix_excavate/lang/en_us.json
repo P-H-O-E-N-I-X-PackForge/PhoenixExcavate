@@ -13,6 +13,5 @@
 
   "phoenix_excavate.matchmode.exact": "Exact",
   "phoenix_excavate.matchmode.match_ore": "Match List (Ore)",
-  "phoenix_excavate.matchmode.match_any": "Match List (Any)",
-  "phoenix_excavate.matchmode.tree": "Tree"
+  "phoenix_excavate.matchmode.match_any": "Match List (Any)"
 }
