@@ -84,9 +84,10 @@ public final class TreeFinder {
 
     private record Tree(List<BlockPos> logs, List<BlockPos> roots, List<BlockPos> bases, boolean crown) {}
 
+    /** The tree the origin log belongs to, origin first; null when the log is not part of a tree. */
     public static List<BlockPos> find(BlockGetter level, BlockPos origin, BlockState originState,
                                       int cap, ItemStack tool, boolean respectToolTier) {
-        if (!isLog(originState)) return new ArrayList<>(List.of(origin));
+        if (!isLog(originState)) return null;
 
         int limit = Math.max(cap, MIN_TREE_LIMIT);
         Set<BlockPos> claimed = new HashSet<>();
@@ -103,8 +104,8 @@ public final class TreeFinder {
 
             Tree tree = flood(level, seed, claimed, limit - felled.size(), tool, respectToolTier);
             if (REQUIRE_FOLIAGE && !tree.crown()) {
-                // The tree you actually clicked isn't a tree: behave like a normal single break.
-                if (trees == 0) return new ArrayList<>(List.of(origin));
+                // The log you clicked isn't part of a tree (a cabin, a pile): the caller falls back to normal mining.
+                if (trees == 0) return null;
                 continue; // a nearby log cluster with no foliage: leave it alone
             }
 
