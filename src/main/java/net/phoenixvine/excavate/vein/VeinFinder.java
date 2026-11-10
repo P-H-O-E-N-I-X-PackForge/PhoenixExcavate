@@ -43,8 +43,13 @@ public final class VeinFinder {
         int cap = ExcavateServerConfig.effectiveMaxVeinSize();
 
         ExcavateSettings settings = ExcavateSettings.get();
-        if ("tree".equals(matchMode.id().getPath()) && TreeFinder.isLog(originState)) {
-            return TreeFinder.find(level, startPos, originState, cap, tool, settings.isRespectToolTier());
+        // Breaking a tree log fells the whole tree whatever the match mode or shape, like a GregTech axe. A log that is
+        // not part of a tree (no foliage) is mined by the normal match mode and shape below.
+        if (TreeFinder.isLog(originState)) {
+            List<BlockPos> tree = TreeFinder.find(level, startPos, originState, cap, tool,
+                    settings.isRespectToolTier());
+            if (tree != null) return tree;
+            if ("tree".equals(matchMode.id().getPath())) return result;
         }
 
         if (BlockFamily.isBonemealablePlant(originState)) {
