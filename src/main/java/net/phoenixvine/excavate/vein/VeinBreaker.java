@@ -139,6 +139,10 @@ public class VeinBreaker {
         int debounceTicks = ExcavateServerConfig.VEIN_TRIGGER_DEBOUNCE_TICKS.get();
         if (lastTrigger != null && now - lastTrigger < debounceTicks) return;
         LAST_TRIGGER_TICK.put(key, now);
+        if (LAST_TRIGGER_TICK.size() > 256) {
+            // Machines get a key per fake player instance, so forget the ones that have gone quiet.
+            LAST_TRIGGER_TICK.values().removeIf(t -> now - t > 1200L);
+        }
 
         BlockPos origin = event.getPos();
         Direction facing = FacingUtil.facingOf(player.getLookAngle());
@@ -189,7 +193,13 @@ public class VeinBreaker {
                 return true;
             }
 
-            drainOneJob(player, level, job, budget);
+            try {
+                drainOneJob(player, level, job, budget);
+            } catch (Throwable t) {
+                // A block that throws while being broken must not take the server tick down with it: drop this job.
+                PhoenixExcavate.LOGGER.error("Vein-mine job at {} failed and was dropped.", job.origin, t);
+                job.remaining.clear();
+            }
 
             if (job.remaining.isEmpty()) {
                 queue.poll();
