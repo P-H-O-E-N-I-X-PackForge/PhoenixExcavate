@@ -47,11 +47,15 @@ public final class VeinFinder {
 
         int cap = ExcavateServerConfig.effectiveMaxVeinSize();
 
+        ExcavateSettings settings = ExcavateSettings.get();
+        if ("tree".equals(matchMode.id().getPath()) && TreeFinder.isLog(originState)) {
+            return TreeFinder.find(level, startPos, originState, cap, tool, settings.isRespectToolTier());
+        }
+
         if (BlockFamily.isBonemealablePlant(originState)) {
             return findPlantsInArea(level, startPos, originState, cap);
         }
 
-        ExcavateSettings settings = ExcavateSettings.get();
         boolean diagonals = settings.isIncludeDiagonalNeighbors();
         int maxExplored = exploreBudget(cap, diagonals);
         boolean toolTierEnabled = settings.isRespectToolTier();

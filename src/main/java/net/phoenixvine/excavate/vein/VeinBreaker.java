@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -19,6 +20,7 @@ import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraftforge.common.util.FakePlayer;
 import net.phoenixvine.excavate.PhoenixExcavate;
 import net.phoenixvine.excavate.api.ExcavateAPI;
 import net.phoenixvine.excavate.api.MatchMode;
@@ -44,11 +46,14 @@ public class VeinBreaker {
     private static final class Job {
         final BlockPos origin;
         final Deque<BlockPos> remaining;
+        /** Set for fake players (machines), which can't be looked up in the player list. Null for real players. */
+        final ServerPlayer actor;
         int broken = 0;
 
-        Job(BlockPos origin, List<BlockPos> candidates) {
+        Job(BlockPos origin, List<BlockPos> candidates, ServerPlayer actor) {
             this.origin = origin;
             this.remaining = new ArrayDeque<>(candidates);
+            this.actor = actor;
         }
     }
 
@@ -59,6 +64,10 @@ public class VeinBreaker {
     public static void onBreak(BlockEvent.BreakEvent event) {
         if (event.isCanceled() || Boolean.TRUE.equals(PROCESSING.get())) return;
         if (!(event.getPlayer() instanceof ServerPlayer player) || !(event.getLevel() instanceof ServerLevel level)) return;
+        // Create deployers and friends break blocks as a FakePlayer. Create even reports the deployer's OWNER's uuid
+        // from getUUID(), so without this check a deployer would pick up its owner's vein-mine toggle and then
+        // drain the vein through the real owner (their tool, hunger and inventory, from wherever they are).
+        if (player instanceof FakePlayer && !ExcavateServerConfig.ALLOW_FAKE_PLAYERS.get()) return;
 
         try {
             PROCESSING.set(true);
@@ -85,11 +94,13 @@ public class VeinBreaker {
     private static void handleBreak(BlockEvent.BreakEvent event, ServerPlayer player, ServerLevel level) {
         ExcavateSettings settings = ExcavateSettings.get();
 
-        if (settings.isGeneralMiningExhaustion()) {
+        boolean machine = player instanceof FakePlayer;
+
+        if (!machine && settings.isGeneralMiningExhaustion()) {
             player.causeFoodExhaustion(0.005F);
         }
 
-        VeinServerState.Active active = VeinServerState.active(player.getUUID());
+        VeinServerState.Active active = machine ? machineActive() : VeinServerState.active(player.getUUID());
         if (active == null) return;
         if (VeinActions.onBreak(player, level, event.getPos(), active)) {
             event.setCanceled(true);
@@ -123,10 +134,11 @@ public class VeinBreaker {
         MatchMode matchMode = config.matchMode();
 
         long now = level.getGameTime();
-        Long lastTrigger = LAST_TRIGGER_TICK.get(player.getUUID());
+        UUID key = keyOf(player);
+        Long lastTrigger = LAST_TRIGGER_TICK.get(key);
         int debounceTicks = ExcavateServerConfig.VEIN_TRIGGER_DEBOUNCE_TICKS.get();
         if (lastTrigger != null && now - lastTrigger < debounceTicks) return;
-        LAST_TRIGGER_TICK.put(player.getUUID(), now);
+        LAST_TRIGGER_TICK.put(key, now);
 
         BlockPos origin = event.getPos();
         Direction facing = FacingUtil.facingOf(player.getLookAngle());
@@ -144,7 +156,8 @@ public class VeinBreaker {
         level.playSound(null, origin, soundType.getBreakSound(), SoundSource.BLOCKS,
                 (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
 
-        JOBS.computeIfAbsent(player.getUUID(), k -> new ArrayDeque<>()).add(new Job(origin, pre.getCandidates()));
+        JOBS.computeIfAbsent(key, k -> new ArrayDeque<>())
+                .add(new Job(origin, pre.getCandidates(), machine ? player : null));
     }
 
     @SubscribeEvent
@@ -169,7 +182,8 @@ public class VeinBreaker {
             Job job = queue.peek();
             if (job == null) return true;
 
-            ServerPlayer player = server == null ? null : server.getPlayerList().getPlayer(entry.getKey());
+            ServerPlayer player = job.actor != null ? job.actor
+                    : (server == null ? null : server.getPlayerList().getPlayer(entry.getKey()));
             if (player == null || !(player.level() instanceof ServerLevel level)) {
                 queue.clear();
                 return true;
@@ -194,8 +208,10 @@ public class VeinBreaker {
 
         boolean respectDurability = ExcavateServerConfig.effectiveRespectDurability() && !bareHanded;
         boolean respectEnchantments = ExcavateServerConfig.effectiveRespectEnchantments();
-        boolean collectToPlayer = ExcavateServerConfig.effectiveCollectToPlayer();
-        boolean respectHunger = ExcavateServerConfig.effectiveRespectHunger();
+        // Machines have no inventory to collect into and no hunger bar: drops fall in the world instead.
+        boolean machine = player instanceof FakePlayer;
+        boolean collectToPlayer = !machine && ExcavateServerConfig.effectiveCollectToPlayer();
+        boolean respectHunger = !machine && ExcavateServerConfig.effectiveRespectHunger();
 
         int processed = 0;
         while (processed < budget && !job.remaining.isEmpty()) {
@@ -247,6 +263,21 @@ public class VeinBreaker {
                 player.causeFoodExhaustion(0.005F);
             }
         }
+    }
+
+    /** Debounce / job key. Fake players get a key per instance, never their owner's uuid. */
+    private static UUID keyOf(ServerPlayer player) {
+        if (player instanceof FakePlayer) {
+            return new UUID(0x46414B45504C5952L, System.identityHashCode(player));
+        }
+        return player.getUUID();
+    }
+
+    private static VeinServerState.Active machineActive() {
+        ResourceLocation shape = ResourceLocation.tryParse(ExcavateServerConfig.MACHINE_SHAPE.get().trim());
+        ResourceLocation mode = ResourceLocation.tryParse(ExcavateServerConfig.MACHINE_MATCH_MODE.get().trim());
+        if (shape == null || mode == null) return null;
+        return new VeinServerState.Active(shape, mode, VeinMode.MINE);
     }
 
     private static void giveToPlayer(ServerPlayer player, List<ItemStack> drops) {

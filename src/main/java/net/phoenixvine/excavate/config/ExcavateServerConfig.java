@@ -37,6 +37,10 @@ public class ExcavateServerConfig {
     public static final ForgeConfigSpec.IntValue VEIN_BLOCKS_PER_TICK;
     public static final ForgeConfigSpec.IntValue VEIN_TRIGGER_DEBOUNCE_TICKS;
 
+    public static final ForgeConfigSpec.BooleanValue ALLOW_FAKE_PLAYERS;
+    public static final ForgeConfigSpec.ConfigValue<String> MACHINE_SHAPE;
+    public static final ForgeConfigSpec.ConfigValue<String> MACHINE_MATCH_MODE;
+
     public static final ForgeConfigSpec.ConfigValue<String> REQUIRED_ENCHANTMENT;
 
     static {
@@ -94,7 +98,7 @@ public class ExcavateServerConfig {
                 .defineList("disabledShapes", new ArrayList<>(), o -> o instanceof String);
 
         DISABLED_MATCH_MODES = builder
-                .comment("Match-mode ids players may not select at all (e.g. \"match_any\"). Built-ins: exact, match_ore, match_any.")
+                .comment("Match-mode ids players may not select at all (e.g. \"match_any\"). Built-ins: exact, match_ore, match_any, tree.")
                 .defineList("disabledMatchModes", new ArrayList<>(), o -> o instanceof String);
 
         HARVEST_REPLANTS = builder
@@ -159,6 +163,29 @@ public class ExcavateServerConfig {
                         "This debounce is far shorter than any legitimate gap between a player's own deliberate " +
                         "vein-mine actions, so it doesn't affect normal play.")
                 .defineInRange("veinTriggerDebounceTicks", 5, 0, 200);
+
+        builder.pop();
+        builder.push("machines");
+
+        ALLOW_FAKE_PLAYERS = builder
+                .comment("Whether machines that break blocks through a fake player (Create deployers, including ones on " +
+                        "contraptions, and similar automation from other mods) may trigger vein-mining. Off by default. " +
+                        "Fake players have no client to toggle vein-mining, so when this is on they use the shape and " +
+                        "match mode set below instead of any player's own settings. Machines never use their owner's " +
+                        "settings, tool, hunger or inventory, and their drops fall in the world instead of going to a " +
+                        "player. Note that Create's drills, saws and harvesters break blocks without any player at all, " +
+                        "so they can't trigger vein-mining whatever this is set to.")
+                .define("allowFakePlayerVeinMining", false);
+
+        MACHINE_SHAPE = builder
+                .comment("Shape id used for machine vein-mines (only matters if allowFakePlayerVeinMining is on). " +
+                        "Built-ins: blob, tunnel, layer, wall, staircase, shapeless. Still subject to the disabled-shapes list.")
+                .define("machineShape", "phoenix_excavate:blob");
+
+        MACHINE_MATCH_MODE = builder
+                .comment("Match mode id used for machine vein-mines (only matters if allowFakePlayerVeinMining is on). " +
+                        "Built-ins: exact, match_ore, match_any, tree. Still subject to the disabled-match-modes list.")
+                .define("machineMatchMode", "phoenix_excavate:exact");
 
         builder.pop();
         builder.push("requirements");
