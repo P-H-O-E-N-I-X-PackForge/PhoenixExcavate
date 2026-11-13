@@ -29,7 +29,7 @@ public final class ExcavateClientProxy {
         SuiteHudBar.register(PhoenixExcavate.MOD_ID, SuiteHudBar.PRIORITY_EXCAVATE,
                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(PhoenixExcavate.MOD_ID,
                         "textures/gui/suite_bar_icon.png"),
-                net.minecraft.network.chat.Component.literal("§fOpen Excavate Settings"),
+                net.minecraft.network.chat.Component.translatable("phoenix_excavate.ui.open_settings"),
                 () -> {
                     net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
                     net.minecraft.client.gui.screens.Screen current = mc.screen;

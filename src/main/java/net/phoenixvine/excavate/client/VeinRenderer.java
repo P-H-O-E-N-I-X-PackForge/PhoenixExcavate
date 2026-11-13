@@ -84,11 +84,11 @@ public class VeinRenderer {
             MatchMode mode = MatchModeRegistry.byId(ExcavateSettings.get().getMatchModeId());
             String modeName = mode == null ? ExcavateSettings.get().getMatchModeId() :
                     net.minecraft.network.chat.Component.translatable(mode.translationKey().toString()).getString();
-            text = "§cVein: no match §7(mode: §f" + modeName + "§7)";
+            text = net.minecraft.client.resources.language.I18n.get("phoenix_excavate.ui.no_match", modeName);
         } else {
             VeinShape shape = VeinClientState.getShape();
             String shapeName = net.minecraft.network.chat.Component.translatable(shape.translationKey()).getString();
-            text = "§7Vein: §f" + (preview.size() - 1) + " §7— " + shapeName;
+            text = net.minecraft.client.resources.language.I18n.get("phoenix_excavate.ui.vein_preview", preview.size() - 1, shapeName);
         }
 
         int screenW = event.getGuiGraphics().guiWidth();
