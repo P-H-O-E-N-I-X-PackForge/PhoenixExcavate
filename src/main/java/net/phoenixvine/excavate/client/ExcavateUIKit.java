@@ -10,6 +10,10 @@ public final class ExcavateUIKit {
 
     private ExcavateUIKit() {}
 
+    public static String str(String key, Object... args) {
+        return net.minecraft.client.resources.language.I18n.get(key, args);
+    }
+
     public static void drawScrim(GuiGraphics g, int width, int height) {
         g.fill(0, 0, width, height, ExcavateThemePalette.BG);
     }

@@ -18,12 +18,12 @@ public final class ExcavateHud {
     private ExcavateHud() {}
 
     public static void showShapeToast(VeinShape shape) {
-        label = "§7Vein Shape: §f" + Component.translatable(shape.translationKey()).getString();
+        label = ExcavateUIKit.str("phoenix_excavate.ui.shape_toast", Component.translatable(shape.translationKey()).getString());
         shownAtMs = System.currentTimeMillis();
     }
 
     public static void showModeToast(VeinMode mode) {
-        label = "§7Vein Mode: §f" + mode.label();
+        label = ExcavateUIKit.str("phoenix_excavate.ui.mode_toast", ExcavateUIKit.str(mode.translationKey()));
         shownAtMs = System.currentTimeMillis();
     }
 

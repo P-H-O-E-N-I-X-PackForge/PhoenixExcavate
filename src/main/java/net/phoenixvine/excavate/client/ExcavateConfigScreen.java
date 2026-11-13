@@ -56,7 +56,7 @@ public class ExcavateConfigScreen extends Screen {
     private final List<int[]> listRowRects = new ArrayList<>();
 
     public ExcavateConfigScreen(Screen parent) {
-        super(Component.literal("Phoenix Ultimine"));
+        super(Component.translatable("phoenix_excavate.ui.title"));
         this.parent = parent;
     }
 
@@ -83,13 +83,13 @@ public class ExcavateConfigScreen extends Screen {
         calculateLayout();
 
         newEntryBox = new EditBox(font, listX, panelY + panelH - 46, listW - 100, 16, Component.empty());
-        newEntryBox.setHint(Component.literal("§8e.g. minecraft:diamond_ore"));
+        newEntryBox.setHint(Component.translatable("phoenix_excavate.ui.entry_hint"));
         newEntryBox.setMaxLength(256);
         addRenderableWidget(newEntryBox);
 
         int finalSwX = swatchRects.isEmpty() ? 0 : swatchRects.get(swatchRects.size() - 1)[0] + 16;
         colorHexBox = new EditBox(font, finalSwX + 4, themeLinksY + ROW_H + 3, 70, 14, Component.empty());
-        colorHexBox.setHint(Component.literal("§8RRGGBB"));
+        colorHexBox.setHint(Component.translatable("phoenix_excavate.ui.color_hint"));
         colorHexBox.setMaxLength(6);
         colorHexBox.setValue(ExcavateSettings.get().getOutlineColorHex());
         colorHexBox.setResponder(v -> {
@@ -99,7 +99,7 @@ public class ExcavateConfigScreen extends Screen {
         });
         addRenderableWidget(colorHexBox);
 
-        int boxX = panelX + 12 + font.width("Max vein size: ") + 6;
+        int boxX = panelX + 12 + font.width(ExcavateUIKit.str("phoenix_excavate.ui.max_vein_size_plain")) + 6;
         maxVeinSizeBox = new EditBox(font, boxX, vsY + 2, 45, 14, Component.empty());
         maxVeinSizeBox.setMaxLength(5);
         maxVeinSizeBox.setValue(String.valueOf(ExcavateSettings.get().getMaxVeinSize()));
@@ -128,7 +128,7 @@ public class ExcavateConfigScreen extends Screen {
         wikiW = font.width("📖 Wiki");
         ty += ROW_H + 2;
 
-        int swX = leftX + font.width("Outline color: ") + 2;
+        int swX = leftX + font.width(ExcavateUIKit.str("phoenix_excavate.ui.outline_color_plain")) + 2;
         int swY = ty + 2;
         swatchRects.clear();
         for (int c : SWATCHES) {
@@ -184,8 +184,8 @@ public class ExcavateConfigScreen extends Screen {
         g.pose().pushPose();
         g.pose().scale(uiScale, uiScale, 1f);
 
-        ExcavateUIKit.drawModalChrome(g, font, vw, vh, panelX, panelY, panelW, panelH, 20, "§fPhoenix Ultimine Settings");
-        g.drawString(font, "§8Esc or O to close", panelX + panelW - font.width("Esc or O to close") - 10,
+        ExcavateUIKit.drawModalChrome(g, font, vw, vh, panelX, panelY, panelW, panelH, 20, ExcavateUIKit.str("phoenix_excavate.ui.settings_title"));
+        g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.close_hint"), panelX + panelW - font.width(ExcavateUIKit.str("phoenix_excavate.ui.close_hint_plain")) - 10,
                 panelY + 7, ExcavateThemePalette.TEXT_FAINT, false);
 
         renderLeftColumn(g, mx, my, s);
@@ -201,18 +201,18 @@ public class ExcavateConfigScreen extends Screen {
 
         boolean themeHov = hovRow(mx, my, x, themeRowY, leftColWidth);
         if (themeHov) g.fill(x - 2, themeRowY, x + leftColWidth, themeRowY + ROW_H, 0x22FFFFFF);
-        g.drawString(font, "§7Theme: §f" + PhoenixTheme.getActiveName() + " §8(click)",
+        g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.theme_row", PhoenixTheme.getActiveName()),
                 x, themeRowY + 5, ExcavateThemePalette.TEXT, false);
 
         boolean editThemeHov = hovRow(mx, my, editThemeX, themeLinksY, editThemeW);
-        g.drawString(font, editThemeHov ? "§b✎ Edit colors..." : "§8✎ Edit colors...",
+        g.drawString(font, editThemeHov ? ExcavateUIKit.str("phoenix_excavate.ui.edit_colors_hover") : ExcavateUIKit.str("phoenix_excavate.ui.edit_colors"),
                 editThemeX, themeLinksY + 5, ExcavateThemePalette.TEXT_DIM, false);
 
         boolean wikiHov = hovRow(mx, my, wikiX, themeLinksY, wikiW);
-        g.drawString(font, wikiHov ? "§b📖 Wiki" : "§8📖 Wiki", wikiX, themeLinksY + 5,
+        g.drawString(font, wikiHov ? ExcavateUIKit.str("phoenix_excavate.ui.wiki_hover") : ExcavateUIKit.str("phoenix_excavate.ui.wiki"), wikiX, themeLinksY + 5,
                 ExcavateThemePalette.TEXT_DIM, false);
 
-        g.drawString(font, "§7Outline color:", x, themeLinksY + ROW_H + 7, ExcavateThemePalette.TEXT, false);
+        g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.outline_color"), x, themeLinksY + ROW_H + 7, ExcavateThemePalette.TEXT, false);
         for (int i = 0; i < SWATCHES.length; i++) {
             int[] rect = swatchRects.get(i);
             boolean hov = mx >= rect[0] && mx < rect[0] + 12 && my >= rect[1] && my < rect[1] + 12;
@@ -221,18 +221,18 @@ public class ExcavateConfigScreen extends Screen {
         }
 
         boolean resetHov = hovRow(mx, my, resetColorX, resetColorY, resetColorW);
-        g.drawString(font, resetHov ? "§b↺ Theme color" : "§8↺ Theme color", resetColorX, resetColorY + 5,
+        g.drawString(font, resetHov ? ExcavateUIKit.str("phoenix_excavate.ui.theme_color_hover") : ExcavateUIKit.str("phoenix_excavate.ui.theme_color"), resetColorX, resetColorY + 5,
                 ExcavateThemePalette.TEXT_DIM, false);
 
         MatchMode matchMode = MatchModeRegistry.byId(s.getMatchModeId());
         String matchModeName = matchMode == null ? s.getMatchModeId() : Component.translatable(matchMode.translationKey()).getString();
         boolean matchModeHov = hovRow(mx, my, x, matchModeRowY, leftColWidth);
         if (matchModeHov) g.fill(x - 2, matchModeRowY, x + leftColWidth, matchModeRowY + ROW_H, 0x22FFFFFF);
-        g.drawString(font, "§7Match: §f" + matchModeName + " §8(click)",
+        g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.match_row", matchModeName),
                 x, matchModeRowY + 5, ExcavateThemePalette.TEXT, false);
 
         boolean vsLocked = ExcavateServerConfig.LOCK_MAX_VEIN_SIZE.get();
-        g.drawString(font, "§7Max vein size:", x, vsY + 5, ExcavateThemePalette.TEXT, false);
+        g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.max_vein_size"), x, vsY + 5, ExcavateThemePalette.TEXT, false);
         maxVeinSizeBox.setEditable(!vsLocked);
         if (vsLocked) {
             maxVeinSizeBox.setValue(String.valueOf(ExcavateServerConfig.effectiveMaxVeinSize()));
@@ -242,28 +242,28 @@ public class ExcavateConfigScreen extends Screen {
         }
 
         toggleRowLocked.clear();
-        drawToggleRow(g, 0, "Vein-mining hunger", ExcavateServerConfig.effectiveRespectHunger(), ExcavateServerConfig.LOCK_RESPECT_HUNGER.get(), mx, my);
-        drawToggleRow(g, 1, "Gen. mining hunger", s.isGeneralMiningExhaustion(), false, mx, my);
-        drawToggleRow(g, 2, "Respect durability", ExcavateServerConfig.effectiveRespectDurability(), ExcavateServerConfig.LOCK_RESPECT_DURABILITY.get(), mx, my);
-        drawToggleRow(g, 3, "Respect enchants", ExcavateServerConfig.effectiveRespectEnchantments(), ExcavateServerConfig.LOCK_RESPECT_ENCHANTMENTS.get(), mx, my);
-        drawToggleRow(g, 4, "Respect tool tier", s.isRespectToolTier(), false, mx, my);
-        drawToggleRow(g, 5, "Hold to activate", s.isHoldToActivate(), false, mx, my);
-        drawToggleRow(g, 6, "Include diagonals", s.isIncludeDiagonalNeighbors(), false, mx, my);
-        drawToggleRow(g, 7, "Collect to inv.", ExcavateServerConfig.effectiveCollectToPlayer(), ExcavateServerConfig.LOCK_COLLECT_TO_PLAYER.get(), mx, my);
-        drawToggleRow(g, 8, "Place consumes inv.", ExcavateServerConfig.effectivePlaceConsumesInventory(), ExcavateServerConfig.LOCK_PLACE_CONSUMES_INVENTORY.get(), mx, my);
-        drawToggleRow(g, 9, "Place replaces match", ExcavateServerConfig.effectivePlaceReplacesMatching(), ExcavateServerConfig.LOCK_PLACE_REPLACES_MATCHING.get(), mx, my);
+        drawToggleRow(g, 0, ExcavateUIKit.str("phoenix_excavate.ui.vein_hunger"), ExcavateServerConfig.effectiveRespectHunger(), ExcavateServerConfig.LOCK_RESPECT_HUNGER.get(), mx, my);
+        drawToggleRow(g, 1, ExcavateUIKit.str("phoenix_excavate.ui.general_hunger"), s.isGeneralMiningExhaustion(), false, mx, my);
+        drawToggleRow(g, 2, ExcavateUIKit.str("phoenix_excavate.ui.respect_durability"), ExcavateServerConfig.effectiveRespectDurability(), ExcavateServerConfig.LOCK_RESPECT_DURABILITY.get(), mx, my);
+        drawToggleRow(g, 3, ExcavateUIKit.str("phoenix_excavate.ui.respect_enchants"), ExcavateServerConfig.effectiveRespectEnchantments(), ExcavateServerConfig.LOCK_RESPECT_ENCHANTMENTS.get(), mx, my);
+        drawToggleRow(g, 4, ExcavateUIKit.str("phoenix_excavate.ui.respect_tool_tier"), s.isRespectToolTier(), false, mx, my);
+        drawToggleRow(g, 5, ExcavateUIKit.str("phoenix_excavate.ui.hold_to_activate"), s.isHoldToActivate(), false, mx, my);
+        drawToggleRow(g, 6, ExcavateUIKit.str("phoenix_excavate.ui.include_diagonals"), s.isIncludeDiagonalNeighbors(), false, mx, my);
+        drawToggleRow(g, 7, ExcavateUIKit.str("phoenix_excavate.ui.collect_to_inv"), ExcavateServerConfig.effectiveCollectToPlayer(), ExcavateServerConfig.LOCK_COLLECT_TO_PLAYER.get(), mx, my);
+        drawToggleRow(g, 8, ExcavateUIKit.str("phoenix_excavate.ui.place_consumes_inv"), ExcavateServerConfig.effectivePlaceConsumesInventory(), ExcavateServerConfig.LOCK_PLACE_CONSUMES_INVENTORY.get(), mx, my);
+        drawToggleRow(g, 9, ExcavateUIKit.str("phoenix_excavate.ui.place_replaces_match"), ExcavateServerConfig.effectivePlaceReplacesMatching(), ExcavateServerConfig.LOCK_PLACE_REPLACES_MATCHING.get(), mx, my);
     }
 
     private void renderRightColumn(GuiGraphics g, int mx, int my) {
         boolean locked = MatchListConfig.isLocked(activeList);
 
-        drawTabButton(g, oreTabX, tabY, tabW, "Ore list", activeList.equals("ore"), mx, my);
-        drawTabButton(g, anyTabX, tabY, tabW, "Any list", activeList.equals("any"), mx, my);
+        drawTabButton(g, oreTabX, tabY, tabW, ExcavateUIKit.str("phoenix_excavate.ui.ore_list"), activeList.equals("ore"), mx, my);
+        drawTabButton(g, anyTabX, tabY, tabW, ExcavateUIKit.str("phoenix_excavate.ui.any_list"), activeList.equals("any"), mx, my);
 
         boolean resetListHov = !locked && hovRow(mx, my, resetListX, resetListY, resetListW);
         g.fill(resetListX, resetListY, resetListX + resetListW, resetListY + 16, resetListHov ? 0x33FFFFFF : ExcavateThemePalette.HEADER);
         ExcavateUIKit.drawBorder(g, resetListX, resetListY, resetListW, 16);
-        String resetLabel = locked ? "§6🔒" : (resetListHov ? "§c↺ Rst" : "§7↺ Rst");
+        String resetLabel = locked ? "§6🔒" : (resetListHov ? ExcavateUIKit.str("phoenix_excavate.ui.reset_hover") : ExcavateUIKit.str("phoenix_excavate.ui.reset"));
         g.drawCenteredString(font, resetLabel, resetListX + resetListW / 2, resetListY + 4, ExcavateThemePalette.TEXT_DIM);
 
         g.fill(listX, listY, listX + listW, listY + listH, ExcavateThemePalette.HEADER);
@@ -288,25 +288,25 @@ public class ExcavateConfigScreen extends Screen {
         }
         g.disableScissor();
         if (entries.isEmpty()) {
-            g.drawCenteredString(font, "§8(empty - add below)", listX + listW / 2, listY + listH / 2 - 4, ExcavateThemePalette.TEXT_FAINT);
+            g.drawCenteredString(font, ExcavateUIKit.str("phoenix_excavate.ui.empty_list"), listX + listW / 2, listY + listH / 2 - 4, ExcavateThemePalette.TEXT_FAINT);
         }
 
         newEntryBox.setEditable(!locked);
         if (locked) {
-            g.drawString(font, "§6🔒 Locked by server", listX, panelY + panelH - 26, ExcavateThemePalette.TEXT_FAINT, false);
+            g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.locked_by_server"), listX, panelY + panelH - 26, ExcavateThemePalette.TEXT_FAINT, false);
             return;
         }
 
         boolean typeHov = hovRow(mx, my, typeToggleX, typeToggleY, typeToggleW);
         g.fill(typeToggleX, typeToggleY, typeToggleX + typeToggleW, typeToggleY + 16, typeHov ? 0x33FFFFFF : ExcavateThemePalette.PANEL);
         ExcavateUIKit.drawBorder(g, typeToggleX, typeToggleY, typeToggleW, 16);
-        String typeLabel = newEntryType == MatchEntry.Type.TAG ? "§bTag" : "§7Block";
+        String typeLabel = newEntryType == MatchEntry.Type.TAG ? ExcavateUIKit.str("phoenix_excavate.ui.type_tag") : ExcavateUIKit.str("phoenix_excavate.ui.type_block");
         g.drawCenteredString(font, typeLabel, typeToggleX + typeToggleW / 2, typeToggleY + 4, ExcavateThemePalette.TEXT);
 
         boolean addHov = hovRow(mx, my, addBtnX, addBtnY, addBtnW);
         g.fill(addBtnX, addBtnY, addBtnX + addBtnW, addBtnY + 16, addHov ? 0x4466FF88 : 0x2266FF88);
         ExcavateUIKit.drawBorder(g, addBtnX, addBtnY, addBtnW, 16, 0xFF66FF88);
-        g.drawCenteredString(font, "§a+ Add", addBtnX + addBtnW / 2, addBtnY + 4, 0xFFFFFFFF);
+        g.drawCenteredString(font, ExcavateUIKit.str("phoenix_excavate.ui.add"), addBtnX + addBtnW / 2, addBtnY + 4, 0xFFFFFFFF);
     }
 
     private void drawTabButton(GuiGraphics g, int x, int y, int w, String label, boolean active, int mx, int my) {
