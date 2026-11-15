@@ -43,8 +43,7 @@ public final class VeinFinder {
         int cap = ExcavateServerConfig.effectiveMaxVeinSize();
 
         ExcavateSettings settings = ExcavateSettings.get();
-        // Breaking a tree log fells the tree (one tree fully before the next), within the normal vein size cap. A log
-        // that is not part of a tree (no foliage) is mined by the match mode and shape below.
+
         if (TreeFinder.isLog(originState)) {
             List<BlockPos> tree = TreeFinder.find(level, startPos, originState, cap, tool,
                     settings.isRespectToolTier());
