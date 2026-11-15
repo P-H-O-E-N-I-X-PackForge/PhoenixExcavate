@@ -46,7 +46,7 @@ public class VeinBreaker {
     private static final class Job {
         final BlockPos origin;
         final Deque<BlockPos> remaining;
-        /** Set for fake players (machines), which can't be looked up in the player list. Null for real players. */
+        
         final ServerPlayer actor;
         int broken = 0;
 
@@ -64,9 +64,7 @@ public class VeinBreaker {
     public static void onBreak(BlockEvent.BreakEvent event) {
         if (event.isCanceled() || Boolean.TRUE.equals(PROCESSING.get())) return;
         if (!(event.getPlayer() instanceof ServerPlayer player) || !(event.getLevel() instanceof ServerLevel level)) return;
-        // Create deployers and friends break blocks as a FakePlayer. Create even reports the deployer's OWNER's uuid
-        // from getUUID(), so without this check a deployer would pick up its owner's vein-mine toggle and then
-        // drain the vein through the real owner (their tool, hunger and inventory, from wherever they are).
+
         if (player instanceof FakePlayer && !ExcavateServerConfig.ALLOW_FAKE_PLAYERS.get()) return;
 
         try {
@@ -140,7 +138,7 @@ public class VeinBreaker {
         if (lastTrigger != null && now - lastTrigger < debounceTicks) return;
         LAST_TRIGGER_TICK.put(key, now);
         if (LAST_TRIGGER_TICK.size() > 256) {
-            // Machines get a key per fake player instance, so forget the ones that have gone quiet.
+            
             LAST_TRIGGER_TICK.values().removeIf(t -> now - t > 1200L);
         }
 
@@ -196,7 +194,7 @@ public class VeinBreaker {
             try {
                 drainOneJob(player, level, job, budget);
             } catch (Throwable t) {
-                // A block that throws while being broken must not take the server tick down with it: drop this job.
+                
                 PhoenixExcavate.LOGGER.error("Vein-mine job at {} failed and was dropped.", job.origin, t);
                 job.remaining.clear();
             }
@@ -218,7 +216,7 @@ public class VeinBreaker {
 
         boolean respectDurability = ExcavateServerConfig.effectiveRespectDurability() && !bareHanded;
         boolean respectEnchantments = ExcavateServerConfig.effectiveRespectEnchantments();
-        // Machines have no inventory to collect into and no hunger bar: drops fall in the world instead.
+        
         boolean machine = player instanceof FakePlayer;
         boolean collectToPlayer = !machine && ExcavateServerConfig.effectiveCollectToPlayer();
         boolean respectHunger = !machine && ExcavateServerConfig.effectiveRespectHunger();
@@ -275,7 +273,6 @@ public class VeinBreaker {
         }
     }
 
-    /** Debounce / job key. Fake players get a key per instance, never their owner's uuid. */
     private static UUID keyOf(ServerPlayer player) {
         if (player instanceof FakePlayer) {
             return new UUID(0x46414B45504C5952L, System.identityHashCode(player));

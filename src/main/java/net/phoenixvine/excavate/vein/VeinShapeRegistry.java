@@ -45,8 +45,7 @@ public final class VeinShapeRegistry {
 
     private static List<BlockPos> getLayerPositions(BlockPos pos, BlockPos origin, Direction facing,
                                                     boolean diagonals) {
-        // Only the neighbours on the origin's Y level are ever kept, so build just those (4 or 8)
-        // instead of all 6/26 and filtering most of them away.
+
         int y = origin.getY();
         int px = pos.getX(), pz = pos.getZ();
         if (!diagonals) {

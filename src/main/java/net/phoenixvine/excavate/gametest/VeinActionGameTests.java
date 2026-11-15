@@ -26,7 +26,6 @@ import net.phoenixvine.excavate.vein.VeinShapeRegistry;
 @PrefixGameTestTemplate(false)
 public class VeinActionGameTests {
 
-    // the stock mock server player has no network channel on Forge 1.20.1 and fails to log in, so use a fake player
     private static ServerPlayer mockPlayer(GameTestHelper helper) {
         return net.minecraftforge.common.util.FakePlayerFactory.get(helper.getLevel(),
                 new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "vein-test"));
