@@ -205,7 +205,7 @@ public class ExcavateServerConfig {
     private static volatile boolean warnedUnknownEnchant = false;
 
     public static boolean hasRequiredEnchantment(ItemStack tool) {
-        String id = REQUIRED_ENCHANTMENT.get().trim();
+        String id = ExcavatePolicy.current().requiredEnchantment().trim();
         if (id.isEmpty()) return true;
 
         ResourceLocation rl = ResourceLocation.tryParse(id);
@@ -271,32 +271,37 @@ public class ExcavateServerConfig {
     private ExcavateServerConfig() {}
 
     public static boolean effectiveRespectDurability() {
-        return LOCK_RESPECT_DURABILITY.get() || ExcavateSettings.get().isRespectDurability();
+        return ExcavatePolicy.current().lockRespectDurability() || ExcavateSettings.active().isRespectDurability();
     }
 
     public static boolean effectiveRespectHunger() {
-        return LOCK_RESPECT_HUNGER.get() || ExcavateSettings.get().isRespectHunger();
+        return ExcavatePolicy.current().lockRespectHunger() || ExcavateSettings.active().isRespectHunger();
     }
 
     public static boolean effectiveRespectEnchantments() {
-        return LOCK_RESPECT_ENCHANTMENTS.get() || ExcavateSettings.get().isRespectEnchantments();
+        return ExcavatePolicy.current().lockRespectEnchantments() || ExcavateSettings.active().isRespectEnchantments();
     }
 
     public static boolean effectiveCollectToPlayer() {
-        return LOCK_COLLECT_TO_PLAYER.get() || ExcavateSettings.get().isCollectToPlayer();
+        return ExcavatePolicy.current().lockCollectToPlayer() || ExcavateSettings.active().isCollectToPlayer();
     }
 
     public static boolean effectivePlaceConsumesInventory() {
-        return LOCK_PLACE_CONSUMES_INVENTORY.get() || ExcavateSettings.get().isPlaceConsumesInventory();
+        return ExcavatePolicy.current().lockPlaceConsumesInventory() || ExcavateSettings.active().isPlaceConsumesInventory();
     }
 
     public static boolean effectivePlaceReplacesMatching() {
-        return LOCK_PLACE_REPLACES_MATCHING.get() || ExcavateSettings.get().isPlaceReplacesMatching();
+        return ExcavatePolicy.current().lockPlaceReplacesMatching() || ExcavateSettings.active().isPlaceReplacesMatching();
+    }
+
+    public static boolean effectiveRespectToolTier() {
+        return ExcavatePolicy.current().lockToolTier() || ExcavateSettings.active().isRespectToolTier();
     }
 
     public static int effectiveMaxVeinSize() {
-        if (LOCK_MAX_VEIN_SIZE.get()) return MAX_VEIN_SIZE_CAP.get();
-        return Math.min(ExcavateSettings.get().getMaxVeinSize(), MAX_VEIN_SIZE_CAP.get());
+        ExcavatePolicy.Resolved policy = ExcavatePolicy.current();
+        if (policy.lockMaxVeinSize()) return policy.maxVeinSizeCap();
+        return Math.min(ExcavateSettings.active().getMaxVeinSize(), policy.maxVeinSizeCap());
     }
 
     private static String stripNamespace(String id) {
@@ -305,16 +310,16 @@ public class ExcavateServerConfig {
     }
 
     public static boolean isShapeAllowed(String shapeId) {
-        return !DISABLED_SHAPES.get().contains(stripNamespace(shapeId));
+        return !ExcavatePolicy.current().disabledShapes().contains(stripNamespace(shapeId));
     }
 
     public static boolean isMatchModeAllowed(String matchModeId) {
-        return !DISABLED_MATCH_MODES.get().contains(stripNamespace(matchModeId));
+        return !ExcavatePolicy.current().disabledMatchModes().contains(stripNamespace(matchModeId));
     }
 
     public static boolean isListLocked(String listName) {
-        if ("ore".equals(listName)) return LOCK_ORE_LIST.get();
-        if ("any".equals(listName)) return LOCK_ANY_LIST.get();
+        if ("ore".equals(listName)) return ExcavatePolicy.current().lockOreList();
+        if ("any".equals(listName)) return ExcavatePolicy.current().lockAnyList();
         return false;
     }
 
@@ -324,8 +329,9 @@ public class ExcavateServerConfig {
         if (!SPEC.isLoaded()) {
             raw = "ore".equals(listName) ? defaultOreEntries() : "any".equals(listName) ? defaultAnyEntries() : List.of();
         } else {
-            raw = "ore".equals(listName) ? ORE_LIST_DEFAULTS.get() :
-                    "any".equals(listName) ? ANY_LIST_DEFAULTS.get() : List.of();
+            ExcavatePolicy.Resolved policy = ExcavatePolicy.current();
+            raw = "ore".equals(listName) ? policy.oreListDefaults() :
+                    "any".equals(listName) ? policy.anyListDefaults() : List.of();
         }
         List<MatchEntry> result = new ArrayList<>();
         for (String s : raw) {

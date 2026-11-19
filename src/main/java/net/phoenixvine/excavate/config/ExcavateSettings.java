@@ -45,6 +45,15 @@ public class ExcavateSettings {
         return INSTANCE;
     }
 
+    /**
+     * The preferences that count for the code running now. On a server, while a vein action runs, that is the player's
+     * own (what their client last sent); anywhere else it is this machine's file, which is the player's on a client.
+     */
+    public static ExcavateSettings active() {
+        java.util.UUID player = net.phoenixvine.excavate.config.ExcavatePolicy.currentPlayer();
+        return player == null ? get() : ExcavatePlayerPrefs.of(player);
+    }
+
     public static ExcavateSettings load() {
         ExcavateSettings result;
         try {
@@ -68,6 +77,9 @@ public class ExcavateSettings {
             Files.createDirectories(SETTINGS_FILE.getParent());
             Files.writeString(SETTINGS_FILE, GSON.toJson(this));
             INSTANCE = this;
+            if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+                net.phoenixvine.excavate.client.ExcavateClientProxy.sendPreferences();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

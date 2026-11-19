@@ -21,6 +21,25 @@ public final class ExcavateClientProxy {
                 (mc, screen) -> new ExcavateConfigScreen(screen));
     }
 
+    /** Sends this player's preferences to the server they are on, if they are on one. */
+    public static void sendPreferences() {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.getConnection() == null || mc.player == null) return;
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                new net.phoenixvine.excavate.network.packet.C2SPrefsPacket(
+                        net.phoenixvine.excavate.config.ExcavateSettings.get()));
+    }
+
+    @SubscribeEvent
+    public static void onLoggedIn(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn event) {
+        sendPreferences();
+    }
+
+    @SubscribeEvent
+    public static void onLoggedOut(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        net.phoenixvine.excavate.config.ExcavatePolicy.setClient(null);
+    }
+
     @SubscribeEvent
     public static void onClientSetup(final FMLClientSetupEvent event) {
         PhoenixExcavate.LOGGER.info("[Phoenix Excavate] Client setup complete.");

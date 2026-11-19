@@ -13,6 +13,12 @@ public class ExcavateNetwork {
         PayloadRegistrar registrar = event.registrar(PROTOCOL);
         registrar.playToServer(C2SSetVeinStatePacket.TYPE, C2SSetVeinStatePacket.STREAM_CODEC,
                 C2SSetVeinStatePacket::handle);
+        registrar.playToServer(net.phoenixvine.excavate.network.packet.C2SPrefsPacket.TYPE,
+                net.phoenixvine.excavate.network.packet.C2SPrefsPacket.STREAM_CODEC,
+                net.phoenixvine.excavate.network.packet.C2SPrefsPacket::handle);
+        registrar.playToClient(net.phoenixvine.excavate.network.packet.S2CPolicyPacket.TYPE,
+                net.phoenixvine.excavate.network.packet.S2CPolicyPacket.STREAM_CODEC,
+                net.phoenixvine.excavate.network.packet.S2CPolicyPacket::handle);
     }
 
     public static void sendToServer(C2SSetVeinStatePacket packet) {

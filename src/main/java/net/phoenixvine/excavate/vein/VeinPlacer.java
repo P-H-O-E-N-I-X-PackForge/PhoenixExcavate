@@ -68,7 +68,7 @@ public class VeinPlacer {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
 
         try {
-            handleRightClick(event, player, level);
+            net.phoenixvine.excavate.config.ExcavatePolicy.runAs(player, () -> handleRightClick(event, player, level));
         } catch (Throwable t) {
             PhoenixExcavate.LOGGER.error(
                     "Vein-placing failed for {} at {}: the triggering placement is unaffected.",
@@ -102,7 +102,7 @@ public class VeinPlacer {
 
         long now = level.getGameTime();
         Long lastTrigger = LAST_TRIGGER_TICK.get(player.getUUID());
-        int debounceTicks = ExcavateServerConfig.VEIN_TRIGGER_DEBOUNCE_TICKS.get();
+        int debounceTicks = net.phoenixvine.excavate.config.ExcavatePolicy.current().veinTriggerDebounceTicks();
         if (lastTrigger != null && now - lastTrigger < debounceTicks) return;
 
         BlockPos anchorPos = event.getPos();
@@ -137,7 +137,6 @@ public class VeinPlacer {
 
     @SuppressWarnings("Duplicates")
     private static void drainJobs() {
-        int budget = ExcavateServerConfig.VEIN_BLOCKS_PER_TICK.get();
         var server = ServerLifecycleHooks.getCurrentServer();
 
         JOBS.entrySet().removeIf(entry -> {
@@ -151,7 +150,9 @@ public class VeinPlacer {
                 return true;
             }
 
-            drainOneJob(player, level, job, budget);
+            final ServerPlayer actor = player;
+            final int budget = net.phoenixvine.excavate.config.ExcavatePolicy.resolve(actor).veinBlocksPerTick();
+            net.phoenixvine.excavate.config.ExcavatePolicy.runAs(actor, () -> drainOneJob(actor, level, job, budget));
 
             if (job.remaining.isEmpty()) queue.poll();
             return queue.isEmpty();

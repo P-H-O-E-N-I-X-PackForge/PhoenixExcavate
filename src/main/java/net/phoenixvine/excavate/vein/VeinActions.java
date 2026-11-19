@@ -121,16 +121,32 @@ public final class VeinActions {
     private static boolean debounced(ServerPlayer player, ServerLevel level) {
         long now = level.getGameTime();
         Long last = LAST_TRIGGER_TICK.get(player.getUUID());
-        if (last != null && now - last < ExcavateServerConfig.VEIN_TRIGGER_DEBOUNCE_TICKS.get()) return true;
+        if (last != null && now - last < net.phoenixvine.excavate.config.ExcavatePolicy.current().veinTriggerDebounceTicks()) return true;
         LAST_TRIGGER_TICK.put(player.getUUID(), now);
         return false;
+    }
+
+    private static void drain(Job job, int budget) {
+        int processed = 0;
+        while (processed < budget && !job.remaining.isEmpty()) {
+            if (!job.action.canContinue(job.context)) {
+                job.remaining.clear();
+                break;
+            }
+            BlockPos pos = job.remaining.poll();
+            processed++;
+            try {
+                job.action.applyTo(job.context, pos);
+            } catch (Throwable t) {
+                PhoenixExcavate.LOGGER.error("Vein action {} failed at {}", job.action.id(), pos, t);
+            }
+        }
     }
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         if (JOBS.isEmpty()) return;
 
-        int budget = ExcavateServerConfig.VEIN_BLOCKS_PER_TICK.get();
         var server = ServerLifecycleHooks.getCurrentServer();
 
         JOBS.entrySet().removeIf(entry -> {
@@ -146,20 +162,9 @@ public final class VeinActions {
                 return true;
             }
 
-            int processed = 0;
-            while (processed < budget && !job.remaining.isEmpty()) {
-                if (!job.action.canContinue(job.context)) {
-                    job.remaining.clear();
-                    break;
-                }
-                BlockPos pos = job.remaining.poll();
-                processed++;
-                try {
-                    job.action.applyTo(job.context, pos);
-                } catch (Throwable t) {
-                    PhoenixExcavate.LOGGER.error("Vein action {} failed at {}", job.action.id(), pos, t);
-                }
-            }
+            final ServerPlayer actor = player;
+            final int budget = net.phoenixvine.excavate.config.ExcavatePolicy.resolve(actor).veinBlocksPerTick();
+            net.phoenixvine.excavate.config.ExcavatePolicy.runAs(actor, () -> drain(job, budget));
 
             if (job.remaining.isEmpty()) queue.poll();
             return queue.isEmpty();

@@ -66,11 +66,11 @@ public class VeinBreaker {
         if (event.isCanceled() || Boolean.TRUE.equals(PROCESSING.get())) return;
         if (!(event.getPlayer() instanceof ServerPlayer player) || !(event.getLevel() instanceof ServerLevel level)) return;
 
-        if (player instanceof FakePlayer && !ExcavateServerConfig.ALLOW_FAKE_PLAYERS.get()) return;
+        if (player instanceof FakePlayer && !net.phoenixvine.excavate.config.ExcavatePolicy.resolve(player).allowFakePlayers()) return;
 
         try {
             PROCESSING.set(true);
-            handleBreak(event, player, level);
+            net.phoenixvine.excavate.config.ExcavatePolicy.runAs(player, () -> handleBreak(event, player, level));
         } catch (Throwable t) {
             logFailure(player, event, t);
         } finally {
@@ -91,7 +91,7 @@ public class VeinBreaker {
     }
 
     private static void handleBreak(BlockEvent.BreakEvent event, ServerPlayer player, ServerLevel level) {
-        ExcavateSettings settings = ExcavateSettings.get();
+        ExcavateSettings settings = ExcavateSettings.active();
 
         boolean machine = player instanceof FakePlayer;
 
@@ -135,7 +135,7 @@ public class VeinBreaker {
         long now = level.getGameTime();
         UUID key = keyOf(player);
         Long lastTrigger = LAST_TRIGGER_TICK.get(key);
-        int debounceTicks = ExcavateServerConfig.VEIN_TRIGGER_DEBOUNCE_TICKS.get();
+        int debounceTicks = net.phoenixvine.excavate.config.ExcavatePolicy.current().veinTriggerDebounceTicks();
         if (lastTrigger != null && now - lastTrigger < debounceTicks) return;
         LAST_TRIGGER_TICK.put(key, now);
         if (LAST_TRIGGER_TICK.size() > 256) {
@@ -177,7 +177,6 @@ public class VeinBreaker {
 
     @SuppressWarnings("Duplicates")
     private static void drainJobs() {
-        int budget = ExcavateServerConfig.VEIN_BLOCKS_PER_TICK.get();
         var server = ServerLifecycleHooks.getCurrentServer();
 
         JOBS.entrySet().removeIf(entry -> {
@@ -193,7 +192,9 @@ public class VeinBreaker {
             }
 
             try {
-                drainOneJob(player, level, job, budget);
+                final ServerPlayer actor = player;
+                final int budget = net.phoenixvine.excavate.config.ExcavatePolicy.resolve(actor).veinBlocksPerTick();
+                net.phoenixvine.excavate.config.ExcavatePolicy.runAs(actor, () -> drainOneJob(actor, level, job, budget));
             } catch (Throwable t) {
                 
                 PhoenixExcavate.LOGGER.error("Vein-mine job at {} failed and was dropped.", job.origin, t);
@@ -282,8 +283,8 @@ public class VeinBreaker {
     }
 
     private static VeinServerState.Active machineActive() {
-        ResourceLocation shape = ResourceLocation.tryParse(ExcavateServerConfig.MACHINE_SHAPE.get().trim());
-        ResourceLocation mode = ResourceLocation.tryParse(ExcavateServerConfig.MACHINE_MATCH_MODE.get().trim());
+        ResourceLocation shape = ResourceLocation.tryParse(net.phoenixvine.excavate.config.ExcavatePolicy.current().machineShape().trim());
+        ResourceLocation mode = ResourceLocation.tryParse(net.phoenixvine.excavate.config.ExcavatePolicy.current().machineMatchMode().trim());
         if (shape == null || mode == null) return null;
         return new VeinServerState.Active(shape, mode, VeinMode.MINE);
     }

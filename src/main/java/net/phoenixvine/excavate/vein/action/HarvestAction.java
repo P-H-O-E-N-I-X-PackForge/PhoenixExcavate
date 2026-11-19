@@ -86,7 +86,7 @@ public final class HarvestAction implements VeinAction {
                 ItemStack.EMPTY;
         List<ItemStack> drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), player, tool);
 
-        boolean replant = ExcavateServerConfig.HARVEST_REPLANTS.get();
+        boolean replant = net.phoenixvine.excavate.config.ExcavatePolicy.current().harvestReplants();
         if (replant && state.getBlock() instanceof CropBlock) {
             ItemStack seed = state.getBlock().getCloneItemStack(level, pos, state);
             for (ItemStack drop : drops) {

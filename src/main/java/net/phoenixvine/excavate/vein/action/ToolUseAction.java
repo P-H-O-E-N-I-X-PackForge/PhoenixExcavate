@@ -34,7 +34,7 @@ public final class ToolUseAction implements VeinAction {
             return true;
         }
         String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-        return ExcavateServerConfig.USE_EXTRA_ITEMS.get().contains(id);
+        return net.phoenixvine.excavate.config.ExcavatePolicy.current().useExtraItems().contains(id);
     }
 
     @Override
