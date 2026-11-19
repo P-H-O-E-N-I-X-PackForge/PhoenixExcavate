@@ -228,7 +228,7 @@ public class ExcavateConfigScreen extends Screen {
         g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.match_row", matchModeName),
                 x, matchModeRowY + 5, ExcavateThemePalette.TEXT, false);
 
-        boolean vsLocked = ExcavateServerConfig.LOCK_MAX_VEIN_SIZE.get();
+        boolean vsLocked = net.phoenixvine.excavate.config.ExcavatePolicy.current().lockMaxVeinSize();
         g.drawString(font, ExcavateUIKit.str("phoenix_excavate.ui.max_vein_size"), x, vsY + 5, ExcavateThemePalette.TEXT, false);
         maxVeinSizeBox.setEditable(!vsLocked);
         if (vsLocked) {
@@ -239,16 +239,16 @@ public class ExcavateConfigScreen extends Screen {
         }
 
         toggleRowLocked.clear();
-        drawToggleRow(g, 0, ExcavateUIKit.str("phoenix_excavate.ui.vein_hunger"), ExcavateServerConfig.effectiveRespectHunger(), ExcavateServerConfig.LOCK_RESPECT_HUNGER.get(), mx, my);
+        drawToggleRow(g, 0, ExcavateUIKit.str("phoenix_excavate.ui.vein_hunger"), ExcavateServerConfig.effectiveRespectHunger(), net.phoenixvine.excavate.config.ExcavatePolicy.current().lockRespectHunger(), mx, my);
         drawToggleRow(g, 1, ExcavateUIKit.str("phoenix_excavate.ui.general_hunger"), s.isGeneralMiningExhaustion(), false, mx, my);
-        drawToggleRow(g, 2, ExcavateUIKit.str("phoenix_excavate.ui.respect_durability"), ExcavateServerConfig.effectiveRespectDurability(), ExcavateServerConfig.LOCK_RESPECT_DURABILITY.get(), mx, my);
-        drawToggleRow(g, 3, ExcavateUIKit.str("phoenix_excavate.ui.respect_enchants"), ExcavateServerConfig.effectiveRespectEnchantments(), ExcavateServerConfig.LOCK_RESPECT_ENCHANTMENTS.get(), mx, my);
-        drawToggleRow(g, 4, ExcavateUIKit.str("phoenix_excavate.ui.respect_tool_tier"), s.isRespectToolTier(), false, mx, my);
+        drawToggleRow(g, 2, ExcavateUIKit.str("phoenix_excavate.ui.respect_durability"), ExcavateServerConfig.effectiveRespectDurability(), net.phoenixvine.excavate.config.ExcavatePolicy.current().lockRespectDurability(), mx, my);
+        drawToggleRow(g, 3, ExcavateUIKit.str("phoenix_excavate.ui.respect_enchants"), ExcavateServerConfig.effectiveRespectEnchantments(), net.phoenixvine.excavate.config.ExcavatePolicy.current().lockRespectEnchantments(), mx, my);
+        drawToggleRow(g, 4, ExcavateUIKit.str("phoenix_excavate.ui.respect_tool_tier"), ExcavateServerConfig.effectiveRespectToolTier(), net.phoenixvine.excavate.config.ExcavatePolicy.current().lockToolTier(), mx, my);
         drawToggleRow(g, 5, ExcavateUIKit.str("phoenix_excavate.ui.hold_to_activate"), s.isHoldToActivate(), false, mx, my);
         drawToggleRow(g, 6, ExcavateUIKit.str("phoenix_excavate.ui.include_diagonals"), s.isIncludeDiagonalNeighbors(), false, mx, my);
-        drawToggleRow(g, 7, ExcavateUIKit.str("phoenix_excavate.ui.collect_to_inv"), ExcavateServerConfig.effectiveCollectToPlayer(), ExcavateServerConfig.LOCK_COLLECT_TO_PLAYER.get(), mx, my);
-        drawToggleRow(g, 8, ExcavateUIKit.str("phoenix_excavate.ui.place_consumes_inv"), ExcavateServerConfig.effectivePlaceConsumesInventory(), ExcavateServerConfig.LOCK_PLACE_CONSUMES_INVENTORY.get(), mx, my);
-        drawToggleRow(g, 9, ExcavateUIKit.str("phoenix_excavate.ui.place_replaces_match"), ExcavateServerConfig.effectivePlaceReplacesMatching(), ExcavateServerConfig.LOCK_PLACE_REPLACES_MATCHING.get(), mx, my);
+        drawToggleRow(g, 7, ExcavateUIKit.str("phoenix_excavate.ui.collect_to_inv"), ExcavateServerConfig.effectiveCollectToPlayer(), net.phoenixvine.excavate.config.ExcavatePolicy.current().lockCollectToPlayer(), mx, my);
+        drawToggleRow(g, 8, ExcavateUIKit.str("phoenix_excavate.ui.place_consumes_inv"), ExcavateServerConfig.effectivePlaceConsumesInventory(), net.phoenixvine.excavate.config.ExcavatePolicy.current().lockPlaceConsumesInventory(), mx, my);
+        drawToggleRow(g, 9, ExcavateUIKit.str("phoenix_excavate.ui.place_replaces_match"), ExcavateServerConfig.effectivePlaceReplacesMatching(), net.phoenixvine.excavate.config.ExcavatePolicy.current().lockPlaceReplacesMatching(), mx, my);
     }
 
     private void renderRightColumn(GuiGraphics g, int mx, int my) {

@@ -28,5 +28,17 @@ public class ExcavateNetwork {
                 C2SSetVeinStatePacket::new,
                 C2SSetVeinStatePacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++,
+                net.phoenixvine.excavate.network.packet.C2SPrefsPacket.class,
+                net.phoenixvine.excavate.network.packet.C2SPrefsPacket::encode,
+                net.phoenixvine.excavate.network.packet.C2SPrefsPacket::new,
+                net.phoenixvine.excavate.network.packet.C2SPrefsPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++,
+                net.phoenixvine.excavate.network.packet.S2CPolicyPacket.class,
+                net.phoenixvine.excavate.network.packet.S2CPolicyPacket::encode,
+                net.phoenixvine.excavate.network.packet.S2CPolicyPacket::new,
+                net.phoenixvine.excavate.network.packet.S2CPolicyPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 }
